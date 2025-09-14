@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Font Sizes -->
+    <x:Double x:Key="FontSizeMicro">10</x:Double>
+    <x:Double x:Key="FontSizeSmall">12</x:Double>
+    <x:Double x:Key="FontSizeMedium">14</x:Double>
+    <x:Double x:Key="FontSizeLarge">16</x:Double>
+    <x:Double x:Key="FontSizeXLarge">18</x:Double>
+    <x:Double x:Key="FontSizeXXLarge">20</x:Double>
+    <x:Double x:Key="FontSizeXXXLarge">24</x:Double>
+    <x:Double x:Key="FontSizeHuge">32</x:Double>
+
+    <!-- Font Families -->
+    <x:String x:Key="FontFamilyRegular">OpenSansRegular</x:String>
+    <x:String x:Key="FontFamilySemibold">OpenSansSemibold</x:String>
+    <x:String x:Key="FontFamilyBold">OpenSansBold</x:String>
+
+    <!-- Text Styles -->
+    <Style x:Key="TextH1" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHuge}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyBold}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="TextH2" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXXXLarge}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyBold}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="TextH3" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXXLarge}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="TextBody" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="TextBodyLarge" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeLarge}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="TextCaption" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+    </Style>
+
+    <Style x:Key="TextButton" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
+        <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
+    </Style>
+
+    <Style x:Key="TextLink" TargetType="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="TextColor" Value="{StaticResource PrimaryRed}" />
+    </Style>
+
+</ResourceDictionary>

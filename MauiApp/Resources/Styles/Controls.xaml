@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Button Styles -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource PrimaryRedGradient}" />
+        <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+    </Style>
+
+    <Style x:Key="SecondaryButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="TextColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="BorderColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="BorderWidth" Value="2" />
+    </Style>
+
+    <!-- Entry Styles -->
+    <Style x:Key="PrimaryEntry" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextHint}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+    </Style>
+
+    <Style x:Key="PrimaryEntryWithBorder" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextHint}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+    </Style>
+
+    <!-- Picker Styles -->
+    <Style x:Key="PrimaryPicker" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+    </Style>
+
+    <!-- SearchBar Styles -->
+    <Style x:Key="PrimarySearchBar" TargetType="SearchBar">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextHint}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyRegular}" />
+        <Setter Property="HeightRequest" Value="24" />
+    </Style>
+
+    <!-- Card Styles -->
+    <Style x:Key="Card" TargetType="Frame">
+        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="HasShadow" Value="True" />
+    </Style>
+
+    <Style x:Key="CardElevated" TargetType="Frame">
+        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="HasShadow" Value="True" />
+    </Style>
+
+    <!-- Icon Styles -->
+    <Style x:Key="IconLarge" TargetType="Image">
+        <Setter Property="WidthRequest" Value="80" />
+        <Setter Property="HeightRequest" Value="80" />
+        <Setter Property="Aspect" Value="AspectFit" />
+    </Style>
+
+    <Style x:Key="IconMedium" TargetType="Image">
+        <Setter Property="WidthRequest" Value="48" />
+        <Setter Property="HeightRequest" Value="48" />
+        <Setter Property="Aspect" Value="AspectFit" />
+    </Style>
+
+    <Style x:Key="IconSmall" TargetType="Image">
+        <Setter Property="WidthRequest" Value="24" />
+        <Setter Property="HeightRequest" Value="24" />
+        <Setter Property="Aspect" Value="AspectFit" />
+    </Style>
+
+</ResourceDictionary>

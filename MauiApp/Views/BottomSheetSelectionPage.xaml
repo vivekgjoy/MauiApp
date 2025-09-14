@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.BottomSheetSelectionPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             BackgroundColor="Transparent"
+             Title="">
+
+    <Grid>
+        <!-- Tap area to close - transparent overlay only above bottom sheet -->
+        <BoxView BackgroundColor="Transparent" 
+                 VerticalOptions="FillAndExpand" 
+                 HorizontalOptions="FillAndExpand"
+                 InputTransparent="False"
+                 Margin="0,0,0,450">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding DismissCommand}" 
+                                      NumberOfTapsRequired="1" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+        
+        <!-- Bottom Sheet -->
+        <Border x:Name="Sheet" 
+                BackgroundColor="#EF5C5C" 
+                StrokeShape="RoundRectangle 16,16,0,0" 
+                VerticalOptions="End" 
+                HorizontalOptions="FillAndExpand" 
+                Margin="0,0,0,0"
+                Padding="0"
+                HeightRequest="450"
+                MaximumHeightRequest="600"
+                StrokeThickness="0">
+            <Border.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+                <TapGestureRecognizer Tapped="OnSheetTapped" />
+            </Border.GestureRecognizers>
+            
+            <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <!-- Drag Handle -->
+                <BoxView Grid.Row="0" 
+                         BackgroundColor="{StaticResource Gray300}" 
+                         WidthRequest="40" 
+                         HeightRequest="4" 
+                         HorizontalOptions="Center" 
+                         Margin="0,12,0,8" />
+                
+                <!-- Header -->
+                <Grid Grid.Row="1" Padding="24,8,24,16">
+                    <!-- Title - Centered -->
+                    <Label Text="{Binding Title}" 
+                           FontSize="20" 
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource White}" 
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center" />
+                </Grid>
+                
+                <!-- Search Bar -->
+                <Border Grid.Row="2" 
+                        Stroke="{StaticResource Gray300}" 
+                        StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 12" 
+                        BackgroundColor="{StaticResource Gray100}" 
+                        Margin="40,0,40,16" 
+                        Padding="16,12"
+                        HeightRequest="48">
+                    <SearchBar Text="{Binding SearchText}" 
+                               Placeholder="Search tenants..." 
+                               PlaceholderColor="{StaticResource TextHint}"
+                               TextColor="Black"
+                               CancelButtonColor="{StaticResource Gray500}"
+                               BackgroundColor="Transparent"
+                               FontSize="16" />
+                </Border>
+                
+                <!-- Items List -->
+                <ScrollView Grid.Row="3" 
+                           VerticalOptions="FillAndExpand"
+                           Margin="0,0,0,24">
+                    <Border Margin="24,0,24,0" 
+                            BackgroundColor="{StaticResource White}" 
+                            Stroke="{StaticResource Gray200}" 
+                            StrokeThickness="1" 
+                            StrokeShape="RoundRectangle 8">
+                        <CollectionView ItemsSource="{Binding FilteredItems}" 
+                                        BackgroundColor="Transparent" 
+                                        SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="16,16" ColumnDefinitions="*,Auto">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCommand}" CommandParameter="{Binding Item}" />
+                                    </Grid.GestureRecognizers>
+                                    
+                                    <!-- Tenant Info -->
+                                    <StackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="{Binding DisplayText}" 
+                                               FontSize="16" 
+                                               TextColor="{StaticResource TextPrimary}" 
+                                               VerticalOptions="Center" />
+                                        <Label Text="{Binding Description}" 
+                                               FontSize="14" 
+                                               TextColor="{StaticResource TextHint}" 
+                                               VerticalOptions="Center"
+                                               IsVisible="{Binding Description, Converter={StaticResource IsNotNullConverter}}" />
+                                    </StackLayout>
+                                    
+                                    <!-- Selection Indicator -->
+                                    <Label Grid.Column="1" 
+                                           Text="✓" 
+                                           FontSize="18" 
+                                           TextColor="{StaticResource PrimaryRed}"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="End"
+                                           IsVisible="{Binding IsSelected}" />
+                                    
+                                    <!-- Divider Line -->
+                                    <BoxView Grid.ColumnSpan="2" 
+                                             BackgroundColor="{StaticResource Gray200}" 
+                                             HeightRequest="1" 
+                                             VerticalOptions="End" 
+                                             Margin="0,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Border>
+                </ScrollView>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>

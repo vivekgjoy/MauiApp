@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.MainPage">
+
+    <Grid>
+        <!-- Background -->
+        <BoxView Background="{StaticResource PrimaryRed}" />
+        
+        <!-- Custom Header -->
+        <StackLayout VerticalOptions="Start" 
+                     Margin="0,60,0,0"
+                     Padding="20,10">
+            <Label Text="SmartERP Dashboard"
+                   Style="{StaticResource TextH1}"
+                   TextColor="{StaticResource White}"
+                   HorizontalOptions="Center"
+                   FontSize="24"
+                   FontAttributes="Bold" />
+        </StackLayout>
+        
+        <!-- Main Content with Safe Area -->
+        <ScrollView Margin="0,120,0,0">
+            <StackLayout Spacing="20" Padding="20">
+                
+                <!-- Welcome Header -->
+                <Frame Style="{StaticResource CardElevated}" Background="{StaticResource PrimaryRedGradient}">
+                    <StackLayout Spacing="10">
+                        <Label Text="Welcome to SmartERP"
+                               Style="{StaticResource TextH2}"
+                               TextColor="{StaticResource White}"
+                               HorizontalOptions="Center" />
+                        <Label Text="Enterprise Solutions Dashboard"
+                               Style="{StaticResource TextBody}"
+                               TextColor="{StaticResource White}"
+                               HorizontalOptions="Center"
+                               Opacity="0.9" />
+                    </StackLayout>
+                </Frame>
+                
+                <!-- Dashboard Cards -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                    
+                    <!-- Quick Actions Card -->
+                    <Frame Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Card}">
+                        <StackLayout Spacing="15">
+                            <Label Text="Quick Actions"
+                                   Style="{StaticResource TextH3}"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                                <Button Grid.Row="0" Grid.Column="0" 
+                                        Text="Reports" 
+                                        Style="{StaticResource SecondaryButton}" />
+                                <Button Grid.Row="0" Grid.Column="1" 
+                                        Text="Analytics" 
+                                        Style="{StaticResource SecondaryButton}" />
+                                <Button Grid.Row="1" Grid.Column="0" 
+                                        Text="Settings" 
+                                        Style="{StaticResource SecondaryButton}" />
+                                <Button Grid.Row="1" Grid.Column="1" 
+                                        Text="Profile" 
+                                        Style="{StaticResource SecondaryButton}" />
+                            </Grid>
+                        </StackLayout>
+                    </Frame>
+                    
+                    <!-- Recent Activity Card -->
+                    <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
+                        <StackLayout Spacing="10">
+                            <Label Text="Recent Activity"
+                                   Style="{StaticResource TextH3}"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="No recent activity"
+                                   Style="{StaticResource TextCaption}"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </StackLayout>
+                    </Frame>
+                    
+                    <!-- Notifications Card -->
+                    <Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
+                        <StackLayout Spacing="10">
+                            <Label Text="Notifications"
+                                   Style="{StaticResource TextH3}"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="No new notifications"
+                                   Style="{StaticResource TextCaption}"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </StackLayout>
+                    </Frame>
+                    
+                    <!-- Logout Button -->
+                    <Button Grid.Row="2" Grid.ColumnSpan="2"
+                            Text="Logout"
+                            Style="{StaticResource PrimaryButton}"
+                            Clicked="OnLogoutClicked" />
+                    
+                </Grid>
+                
+            </StackLayout>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>

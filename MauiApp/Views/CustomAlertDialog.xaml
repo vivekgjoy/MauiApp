@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.Views.CustomAlertDialog"
+             BackgroundColor="Transparent"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
+
+    <Grid>
+        <!-- Semi-transparent overlay -->
+        <BoxView BackgroundColor="#80000000" />
+        
+        <!-- Alert Dialog -->
+        <Frame BackgroundColor="#2C2C2E"
+               CornerRadius="16"
+               HasShadow="True"
+               Margin="40,0,40,0"
+               VerticalOptions="Center"
+               HorizontalOptions="FillAndExpand"
+               Padding="0">
+            
+            <StackLayout Spacing="0">
+                <!-- Header -->
+                <StackLayout Padding="24,20,24,16" Spacing="8">
+                    <Label Text="{Binding Title}"
+                           FontSize="20"
+                           FontFamily="OpenSansSemibold"
+                           TextColor="{StaticResource White}"
+                           HorizontalOptions="Start" />
+                    
+                    <Label Text="{Binding Message}"
+                           FontSize="16"
+                           FontFamily="OpenSansRegular"
+                           TextColor="#E5E5EA"
+                           HorizontalOptions="Start"
+                           LineBreakMode="WordWrap" />
+                </StackLayout>
+                
+                <!-- Divider -->
+                <BoxView Color="#3A3A3C" HeightRequest="1" />
+                
+                <!-- Button -->
+                <Button Text="{Binding ButtonText}"
+                        Command="{Binding ButtonCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource White}"
+                        FontSize="17"
+                        FontFamily="OpenSansSemibold"
+                        HeightRequest="50"
+                        CornerRadius="0" />
+            </StackLayout>
+        </Frame>
+    </Grid>
+</ContentPage>

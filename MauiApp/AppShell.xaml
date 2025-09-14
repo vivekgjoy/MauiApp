@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="MauiApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:MauiApp"
+    xmlns:views="clr-namespace:MauiApp.Views"
+    Title="SmartERP"
+    FlyoutBehavior="Disabled">
+    
+    <Shell.Resources>
+        <Style x:Key="BaseShellItemStyle" TargetType="ShellItem">
+            <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryRed}" />
+            <Setter Property="Shell.ForegroundColor" Value="{StaticResource White}" />
+            <Setter Property="Shell.TitleColor" Value="{StaticResource White}" />
+        </Style>
+    </Shell.Resources>
+    
+
+    <!-- Splash Screen Route -->
+    <ShellContent
+        Title="Splash"
+        ContentTemplate="{DataTemplate views:SplashPage}"
+        Route="SplashPage" />
+
+    <!-- Login Page Route -->
+    <ShellContent
+        Title="Login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Route="LoginPage" />
+
+    <!-- Main Page Route -->
+    <ShellContent
+        Title=""
+        ContentTemplate="{DataTemplate local:MainPage}"
+        Route="MainPage" />
+
+</Shell>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:MauiApp.ViewModels"
+             x:Class="MauiApp.Views.LoginPage"
+             x:DataType="viewmodels:LoginViewModel"
+             Title="Login"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
+
+    <Grid x:Name="RootGrid">
+        <!-- Background Gradient -->
+        <BoxView Background="{StaticResource PrimaryRedGradient}" />
+
+        <!-- Main Content -->
+        <ScrollView x:Name="MainScrollView"
+            VerticalOptions="FillAndExpand"
+            HorizontalOptions="FillAndExpand"
+            IsClippedToBounds="True">
+
+            <Grid VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+
+                <!-- Biometric Section (Red Area) -->
+                <StackLayout VerticalOptions="Start" 
+                             HorizontalOptions="Center" 
+                             Margin="0,60,0,20"
+                             Spacing="15"
+                             IsVisible="{Binding ShowBiometricSection}">
+                    
+                    <!-- Greeting Message -->
+                    <Label Text="{Binding GreetingMessage}"
+                           Style="{StaticResource TextH2}"
+                           TextColor="{StaticResource White}"
+                           HorizontalOptions="Center" />
+                    
+                    <!-- Biometric Instruction -->
+                    <Label Text="Tap to login with Bio or FaceID"
+                           Style="{StaticResource TextBody}"
+                           TextColor="{StaticResource White}"
+                           HorizontalOptions="Center"
+                           Opacity="0.9" />
+                    
+                    <!-- Biometric Icon Button -->
+                    <Button Command="{Binding BiometricLoginCommand}"
+                            BackgroundColor="Transparent"
+                            BorderColor="{StaticResource White}"
+                            BorderWidth="2"
+                            WidthRequest="60"
+                            HeightRequest="60"
+                            CornerRadius="30"
+                            HorizontalOptions="Center"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}">
+                        <Button.ImageSource>
+                            <FileImageSource File="icon_biometric.svg" />
+                        </Button.ImageSource>
+                    </Button>
+                    
+                    <!-- OR Separator with Lines -->
+                    <Grid HorizontalOptions="Center" Margin="0,15,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="60" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Left Line -->
+                        <BoxView Grid.Column="0" 
+                                 BackgroundColor="{StaticResource White}" 
+                                 HeightRequest="1" 
+                                 VerticalOptions="Center" 
+                                 Margin="0,0,10,0" />
+                        
+                        <!-- OR Text -->
+                        <Label Grid.Column="1" 
+                               Text="OR"
+                               Style="{StaticResource TextBody}"
+                               TextColor="{StaticResource White}"
+                               HorizontalOptions="Center" />
+                        
+                        <!-- Right Line -->
+                        <BoxView Grid.Column="2" 
+                                 BackgroundColor="{StaticResource White}" 
+                                 HeightRequest="1" 
+                                 VerticalOptions="Center" 
+                                 Margin="10,0,0,0" />
+                    </Grid>
+                </StackLayout>
+
+                <!-- Login Form Card -->
+                <Frame Style="{StaticResource CardElevated}"
+                       Margin="24,10,24,40"
+                       BackgroundColor="{StaticResource White}"
+                       HorizontalOptions="FillAndExpand"
+                       VerticalOptions="Center"
+                       x:Name="LoginCard"
+                       MinimumHeightRequest="380">
+
+                    <StackLayout Spacing="20">
+
+                        <!-- Login Title -->
+                        <Label Text="Login"
+                               Style="{StaticResource TextH3}"
+                               TextColor="{StaticResource TextPrimary}"
+                               HorizontalOptions="Start" />
+
+                        <!-- Tenant Selection Bottom Sheet Trigger -->
+                        <!-- Tenant Selection Bottom Sheet Trigger -->
+                        <Border x:Name="TenantBorder" 
+        Stroke="{StaticResource Gray300}" 
+        StrokeThickness="1" 
+        StrokeShape="RoundRectangle 10" 
+        Padding="0"
+        BackgroundColor="{StaticResource White}" 
+        HeightRequest="48">
+
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsTenantSelectorOpen}" Value="True">
+                                    <Setter Property="Stroke" Value="{StaticResource PrimaryRed}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenTenantSelectorCommand}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Padding="10,0">
+                                <!-- Entry used for placeholder + tenant name -->
+                                <Entry Grid.Column="0"
+               Text="{Binding SelectedTenant.Name}"
+               Placeholder="Select Tenant"
+               TextColor="{StaticResource TextPrimary}"
+               PlaceholderColor="{StaticResource TextHint}"
+               FontSize="16"
+               IsReadOnly="True"
+               BackgroundColor="Transparent"
+               VerticalOptions="Center"
+               HorizontalOptions="FillAndExpand" />
+
+                                <Label Grid.Column="1" 
+               Text="▼" 
+               TextColor="{StaticResource Gray500}" 
+               VerticalOptions="Center" 
+               FontSize="12" 
+               Margin="8,0,0,0"/>
+                            </Grid>
+                        </Border>
+
+
+                        <!-- Username/Email Field -->
+                        <Border x:Name="UsernameBorder" 
+                                Stroke="{StaticResource Gray300}" 
+                                StrokeThickness="1" 
+                                StrokeShape="RoundRectangle 10" 
+                                Padding="10,4" 
+                                BackgroundColor="{StaticResource White}" 
+                                HeightRequest="48">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding Source={x:Reference UsernameEntry}, Path=IsFocused}" Value="True">
+                                    <Setter Property="Stroke" Value="{StaticResource PrimaryRed}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Entry x:Name="UsernameEntry"
+                                   Text="{Binding UsernameOrEmail}"
+                                   Placeholder="Username / Email"
+                                   PlaceholderColor="{StaticResource TextHint}"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   BackgroundColor="Transparent"
+                                   FontSize="16"
+                                   VerticalOptions="Center"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
+                        <!-- Password Field -->
+                        <Border x:Name="PasswordBorder" 
+                                Stroke="{StaticResource Gray300}" 
+                                StrokeThickness="1" 
+                                StrokeShape="RoundRectangle 10" 
+                                Padding="0"
+                                BackgroundColor="{StaticResource White}" 
+                                HeightRequest="48">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding Source={x:Reference PasswordEntry}, Path=IsFocused}" Value="True">
+                                    <Setter Property="Stroke" Value="{StaticResource PrimaryRed}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Padding="10,0">
+                                <Entry x:Name="PasswordEntry" 
+                                       Grid.Column="0"
+                                       AutomationId="PasswordEntry"
+                                       Text="{Binding Password}"
+                                       Placeholder="Password"
+                                       PlaceholderColor="{StaticResource TextHint}"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       BackgroundColor="Transparent"
+                                       FontSize="16"
+                                       IsPassword="{Binding IsPasswordVisible, Converter={StaticResource InvertedBoolConverter}}"
+                                       VerticalOptions="Center"
+                                       ClearButtonVisibility="WhileEditing" />
+                                <Label Grid.Column="1" 
+                                       Text="👁️" 
+                                       TextColor="{StaticResource Gray500}" 
+                                       VerticalOptions="Center" 
+                                       FontSize="16" 
+                                       Margin="8,0,0,0">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TogglePasswordVisibilityCommand}" />
+                                    </Label.GestureRecognizers>
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsPasswordVisible}" Value="True">
+                                            <Setter Property="Text" Value="🙈" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsPasswordVisible}" Value="False">
+                                            <Setter Property="Text" Value="👁️" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Grid>
+                        </Border>
+
+                        <!-- Forgot Password Link -->
+                        <Label Text="Forgot Password?"
+                               Style="{StaticResource TextLink}"
+                               HorizontalOptions="End"
+                               Margin="0,0,0,10">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ForgotPasswordCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+
+                        <!-- Login Button -->
+                        <Button Text="Log In"
+                                Command="{Binding LoginCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+
+                        <!-- Loading Indicator -->
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           Color="{StaticResource PrimaryRed}"
+                                           IsVisible="{Binding IsBusy}"
+                                           HorizontalOptions="Center" />
+
+                    </StackLayout>
+                </Frame>
+
+            </Grid>
+        </ScrollView>
+    </Grid>
+</ContentPage>

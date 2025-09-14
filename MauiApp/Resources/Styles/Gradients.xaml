@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Primary Red Gradient -->
+    <LinearGradientBrush x:Key="PrimaryRedGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource GradientStart}" Offset="0.0" />
+        <GradientStop Color="{StaticResource GradientEnd}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Vertical Red Gradient -->
+    <LinearGradientBrush x:Key="PrimaryRedGradientVertical" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource GradientStart}" Offset="0.0" />
+        <GradientStop Color="{StaticResource GradientEnd}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Horizontal Red Gradient -->
+    <LinearGradientBrush x:Key="PrimaryRedGradientHorizontal" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource GradientStart}" Offset="0.0" />
+        <GradientStop Color="{StaticResource GradientEnd}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Diagonal Red Gradient -->
+    <LinearGradientBrush x:Key="PrimaryRedGradientDiagonal" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource GradientStart}" Offset="0.0" />
+        <GradientStop Color="{StaticResource PrimaryRedLight}" Offset="0.5" />
+        <GradientStop Color="{StaticResource GradientEnd}" Offset="1.0" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>
