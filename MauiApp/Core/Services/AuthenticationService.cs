@@ -48,8 +48,8 @@ namespace MauiApp.Core.Services
                     Id = 1,
                     Email = request.UsernameOrEmail.Contains("@") ? request.UsernameOrEmail : $"{request.UsernameOrEmail}@company.com",
                     Username = request.UsernameOrEmail,
-                    FirstName = "Udhayakumar",
-                    LastName = "S",
+                    FirstName = "",
+                    LastName = "",
                     TenantId = request.TenantId,
                     TenantName = "SmartERP",
                     IsBiometricEnabled = true,
@@ -142,8 +142,8 @@ namespace MauiApp.Core.Services
                     Id = 1,
                     Email = credentials.Value.Username.Contains("@") ? credentials.Value.Username : $"{credentials.Value.Username}@company.com",
                     Username = credentials.Value.Username,
-                    FirstName = "Udhayakumar",
-                    LastName = "S",
+                    FirstName = "",
+                    LastName = "",
                     TenantId = "1",
                     TenantName = "SmartERP",
                     IsBiometricEnabled = true,
@@ -190,7 +190,18 @@ namespace MauiApp.Core.Services
                 await _appStateService.ClearAppStateAsync();
                 _currentUser = null;
                 
-                await _navigationService.NavigateToRootAsync("//LoginPage");
+                // Navigate to login page on the main thread
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    try
+                    {
+                        await Shell.Current.GoToAsync("//LoginPage");
+                    }
+                    catch (Exception navEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Navigation error during logout: {navEx.Message}");
+                    }
+                });
             }
             catch (Exception ex)
             {

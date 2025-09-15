@@ -1,4 +1,5 @@
 ﻿using MauiApp.Core.Interfaces;
+using MauiApp.Views;
 
 namespace MauiApp;
 
@@ -16,9 +17,11 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var result = await DisplayAlert("Logout", "Are you sure you want to logout?", "Yes", "No");
+            var result = await LogoutConfirmationDialog.ShowAsync();
             if (result)
             {
+                // Small delay to ensure dialog is fully closed
+                await Task.Delay(100);
                 await _authenticationService.LogoutAsync();
             }
         }

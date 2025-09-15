@@ -21,10 +21,10 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>MauiApp</ApplicationTitle>
+		<ApplicationTitle>Smart ERP</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.mauiapp</ApplicationId>
+		<ApplicationId>com.smart.erp</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -40,8 +40,49 @@
 		
 		<!-- Android specific properties -->
 		<EmbedAssembliesIntoApk Condition="'$(TargetFramework)' == 'net9.0-android'">true</EmbedAssembliesIntoApk>
+		<AndroidUseSharedRuntime Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidUseSharedRuntime>
+		<AndroidLinkMode Condition="'$(TargetFramework)' == 'net9.0-android'">SdkOnly</AndroidLinkMode>
+		<AndroidCreatePackagePerAbi Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidCreatePackagePerAbi>
+		<AndroidLinkTool Condition="'$(TargetFramework)' == 'net9.0-android'">r8</AndroidLinkTool>
+		<AndroidEnableAssemblyCompression Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidEnableAssemblyCompression>
+		<AndroidUseAapt2 Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidUseAapt2>
+		<AndroidLinkResources Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidLinkResources>
+		<AndroidDexTool Condition="'$(TargetFramework)' == 'net9.0-android'">d8</AndroidDexTool>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
+	  <AndroidPackageFormat>apk</AndroidPackageFormat>
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-maccatalyst|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-windows10.0.19041.0|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-maccatalyst|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-windows10.0.19041.0|AnyCPU'">
+	  <ApplicationId>com.smart.erptest</ApplicationId>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -52,12 +93,7 @@
 		<MauiSplashScreen Include="Resources\AppIcon\appicon_converted.svg" BaseSize="180,180" />
 
 		<!-- Images -->
-		<MauiImage Include="Resources\Images\*" />
-		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
-		<MauiImage Update="Resources\Images\smart_erp_logo.svg" Resize="True" BaseSize="200,200" />
-		<MauiImage Update="Resources\Images\fingerprint_icon.svg" Resize="True" BaseSize="40,40" />
-		<MauiImage Update="Resources\Images\icon_pass_visible.svg" Resize="True" BaseSize="24,24" />
-		<MauiImage Update="Resources\Images\icon_pass_hide.svg" Resize="True" BaseSize="24,24" />
+		<MauiImage Include="Resources\Images\icon_biometric.svg" Resize="True" BaseSize="32,32" />
 		
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
@@ -72,9 +108,5 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-		<PackageReference Include="Xamarin.AndroidX.Core" Version="1.16.0.1" />
-		<PackageReference Include="Xamarin.AndroidX.Window" Version="1.3.0.6" />
-	</ItemGroup>
 
 </Project>

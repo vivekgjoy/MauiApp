@@ -25,7 +25,7 @@ namespace MauiApp.ViewModels
         private bool _showBiometricSection;
         private bool _isPasswordVisible;
         private bool _isTenantSelectorOpen;
-        private string _greetingMessage = "Hi Udhayakumar!";
+        private string _greetingMessage = "Hi";
         private string _biometricButtonText = "Use Biometric Login";
 
         public LoginViewModel(

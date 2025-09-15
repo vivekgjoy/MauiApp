@@ -42,6 +42,12 @@ namespace MauiApp.Views
                 UsernameEntry.Focused += OnInputFocused;
                 UsernameEntry.Unfocused += OnInputUnfocused;
             }
+            
+            // Handle tenant field focus
+            if (TenantEntry != null)
+            {
+                TenantEntry.Focused += OnTenantEntryFocused;
+            }
         }
 
         private async void OnInputFocused(object sender, FocusEventArgs e)
@@ -56,6 +62,15 @@ namespace MauiApp.Views
             // Reset scroll position when input loses focus
             await Task.Delay(100); // Small delay to ensure keyboard is dismissed
             await MainScrollView.ScrollToAsync(0, 0, true);
+        }
+
+        private void OnTenantEntryFocused(object sender, FocusEventArgs e)
+        {
+            // When tenant field gets focus, open the tenant selector
+            if (_viewModel.OpenTenantSelectorCommand.CanExecute(null))
+            {
+                _viewModel.OpenTenantSelectorCommand.Execute(null);
+            }
         }
     }
 }
