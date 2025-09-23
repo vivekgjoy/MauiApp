@@ -43,6 +43,7 @@ namespace MauiApp
 
             // Register Services
             builder.Services.AddSingleton<INavigationService, NavigationService>();
+            builder.Services.AddSingleton<IApiService, ApiService>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
             builder.Services.AddSingleton<ITenantService, TenantService>();
             builder.Services.AddSingleton<IBottomSheetService, BottomSheetService>();

@@ -20,6 +20,14 @@ namespace MauiApp.Core.Services
                 new Tenant
                 {
                     Id = "1",
+                    Name = "singapore",
+                    Description = "Singapore Office",
+                    LogoUrl = "singapore_logo.png",
+                    IsActive = true
+                },
+                new Tenant
+                {
+                    Id = "2",
                     Name = "SmartERP",
                     Description = "SmartERP Enterprise Solutions",
                     LogoUrl = "smart_erp_logo.png",
@@ -27,7 +35,7 @@ namespace MauiApp.Core.Services
                 },
                 new Tenant
                 {
-                    Id = "2",
+                    Id = "3",
                     Name = "TechCorp",
                     Description = "Technology Corporation",
                     LogoUrl = "tech_corp_logo.png",
@@ -35,7 +43,7 @@ namespace MauiApp.Core.Services
                 },
                 new Tenant
                 {
-                    Id = "3",
+                    Id = "4",
                     Name = "GlobalBiz",
                     Description = "Global Business Solutions",
                     LogoUrl = "global_biz_logo.png",

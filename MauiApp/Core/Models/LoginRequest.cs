@@ -13,6 +13,9 @@ namespace MauiApp.Core.Models
         [Required]
         public string Password { get; set; } = string.Empty;
         
+        [Required]
+        public string TenancyName { get; set; } = string.Empty;
+        
         public string TenantId { get; set; } = string.Empty;
         public bool UseBiometric { get; set; }
     }

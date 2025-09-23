@@ -268,12 +268,30 @@ namespace MauiApp.ViewModels
                 {
                     UsernameOrEmail = UsernameOrEmail.Trim(),
                     Password = Password,
+                    TenancyName = SelectedTenant.Name,
                     TenantId = SelectedTenant.Id,
                     UseBiometric = false
                 };
 
+                // Debug: Log the request details
+                System.Diagnostics.Debug.WriteLine($"=== LOGIN REQUEST ===");
+                System.Diagnostics.Debug.WriteLine($"UsernameOrEmail: '{request.UsernameOrEmail}'");
+                System.Diagnostics.Debug.WriteLine($"Password: '{new string('*', request.Password.Length)}' (Length: {request.Password.Length})");
+                System.Diagnostics.Debug.WriteLine($"TenancyName: '{request.TenancyName}'");
+                System.Diagnostics.Debug.WriteLine($"TenantId: '{request.TenantId}'");
+                System.Diagnostics.Debug.WriteLine($"SelectedTenant: {SelectedTenant?.Name ?? "NULL"}");
+                System.Diagnostics.Debug.WriteLine($"=====================");
+
                 // Attempt login
                 var response = await _authenticationService.LoginAsync(request);
+
+                // Debug: Log the response details
+                System.Diagnostics.Debug.WriteLine($"=== LOGIN RESPONSE ===");
+                System.Diagnostics.Debug.WriteLine($"Success: {response.IsSuccess}");
+                System.Diagnostics.Debug.WriteLine($"Message: '{response.Message}'");
+                System.Diagnostics.Debug.WriteLine($"User: {response.User?.Username ?? "NULL"}");
+                System.Diagnostics.Debug.WriteLine($"Token: {response.Token?.Substring(0, Math.Min(20, response.Token?.Length ?? 0))}...");
+                System.Diagnostics.Debug.WriteLine($"=====================");
 
                 if (response.IsSuccess)
                 {
@@ -336,6 +354,7 @@ namespace MauiApp.ViewModels
                 System.Diagnostics.Debug.WriteLine($"Forgot password error: {ex.Message}");
             }
         }
+
 
         #endregion
     }
