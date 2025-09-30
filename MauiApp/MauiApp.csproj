@@ -41,12 +41,12 @@
 		<!-- Android specific properties -->
 		<EmbedAssembliesIntoApk Condition="'$(TargetFramework)' == 'net9.0-android'">true</EmbedAssembliesIntoApk>
 		<AndroidUseSharedRuntime Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidUseSharedRuntime>
-		<AndroidLinkMode Condition="'$(TargetFramework)' == 'net9.0-android'">SdkOnly</AndroidLinkMode>
+		<AndroidLinkMode Condition="'$(TargetFramework)' == 'net9.0-android'">None</AndroidLinkMode>
 		<AndroidCreatePackagePerAbi Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidCreatePackagePerAbi>
 		<AndroidLinkTool Condition="'$(TargetFramework)' == 'net9.0-android'">r8</AndroidLinkTool>
-		<AndroidEnableAssemblyCompression Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidEnableAssemblyCompression>
+		<AndroidEnableAssemblyCompression Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidEnableAssemblyCompression>
 		<AndroidUseAapt2 Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidUseAapt2>
-		<AndroidLinkResources Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidLinkResources>
+		<AndroidLinkResources Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidLinkResources>
 		<AndroidDexTool Condition="'$(TargetFramework)' == 'net9.0-android'">d8</AndroidDexTool>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
@@ -108,7 +108,15 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
 		<PackageReference Include="System.Text.Json" Version="9.0.5" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.82" />
+		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.8" />
 	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
+		<PackageReference Include="Xamarin.AndroidX.Navigation.Runtime" Version="2.8.9.1" />
+	</ItemGroup>
+
 
 
 </Project>

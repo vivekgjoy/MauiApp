@@ -5,12 +5,15 @@ using Android.Views;
 using AndroidX.Core.View;
 using AndroidX.Core.Content;
 using MauiApp.Core.Interfaces;
+using AndroidX.Core.App;
 
 namespace MauiApp
 {
     [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
+        private const int CameraPermissionRequestCode = 1001;
+        private const int StoragePermissionRequestCode = 1002;
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -40,7 +43,7 @@ namespace MauiApp
             base.OnResume();
             
             // Switch to main theme after splash
-            SetTheme(Resource.Style.MainTheme);
+            SetTheme(Microsoft.Maui.Controls.Resource.Style.MainTheme);
             
             // Ensure status bar color is set after theme change
             SetStatusBarColor();
@@ -93,6 +96,74 @@ namespace MauiApp
                 {
                     Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
                 }, 200);
+            }
+        }
+
+        public bool CheckCameraPermission()
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+            {
+                return ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.Camera) == Permission.Granted;
+            }
+            return true;
+        }
+
+        public bool CheckStoragePermission()
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+            {
+                return ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.ReadExternalStorage) == Permission.Granted;
+            }
+            return true;
+        }
+
+        public void RequestCameraPermission()
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+            {
+                if (!CheckCameraPermission())
+                {
+                    ActivityCompat.RequestPermissions(this, new string[] { Android.Manifest.Permission.Camera }, CameraPermissionRequestCode);
+                }
+            }
+        }
+
+        public void RequestStoragePermission()
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+            {
+                if (!CheckStoragePermission())
+                {
+                    ActivityCompat.RequestPermissions(this, new string[] { Android.Manifest.Permission.ReadExternalStorage }, StoragePermissionRequestCode);
+                }
+            }
+        }
+
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+        {
+            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            
+            if (requestCode == CameraPermissionRequestCode)
+            {
+                if (grantResults.Length > 0 && grantResults[0] == Permission.Granted)
+                {
+                    System.Diagnostics.Debug.WriteLine("Camera permission granted");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Camera permission denied");
+                }
+            }
+            else if (requestCode == StoragePermissionRequestCode)
+            {
+                if (grantResults.Length > 0 && grantResults[0] == Permission.Granted)
+                {
+                    System.Diagnostics.Debug.WriteLine("Storage permission granted");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Storage permission denied");
+                }
             }
         }
     }

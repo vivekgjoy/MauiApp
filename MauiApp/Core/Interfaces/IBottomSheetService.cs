@@ -6,6 +6,7 @@ namespace MauiApp.Core.Interfaces
     {
         Task<T?> ShowSelectionAsync<T>(IEnumerable<T> items, Func<T, string> displaySelector, string title = "");
         Task<Tenant?> ShowTenantSelectionAsync(IEnumerable<Tenant> tenants, Tenant? currentSelectedTenant = null);
+        Task<string?> ShowSelectionAsync(string title, IEnumerable<string> options);
     }
 }
 

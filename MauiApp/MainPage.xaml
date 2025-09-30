@@ -50,8 +50,9 @@
                             
                             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
                                 <Button Grid.Row="0" Grid.Column="0" 
-                                        Text="Reports" 
-                                        Style="{StaticResource SecondaryButton}" />
+                                        Text="Add Reports" 
+                                        Style="{StaticResource SecondaryButton}"
+                                        Clicked="OnAddReportsClicked" />
                                 <Button Grid.Row="0" Grid.Column="1" 
                                         Text="Analytics" 
                                         Style="{StaticResource SecondaryButton}" />

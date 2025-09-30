@@ -63,4 +63,33 @@ public class BottomSheetService : IBottomSheetService
             throw;
         }
     }
+
+    public async Task<string?> ShowSelectionAsync(string title, IEnumerable<string> options)
+    {
+        try
+        {
+            var page = new BottomSheetSelectionPage();
+            var vm = new BottomSheetSelectionViewModel<string>(options, x => x, title);
+            page.BindingContext = vm;
+
+            await Application.Current.MainPage.Navigation.PushModalAsync(page, true);
+            
+            // Wait for the page to be dismissed and return the selected item
+            var tcs = new TaskCompletionSource<string?>();
+            
+            // Subscribe to the page's Disappearing event
+            page.Disappearing += (sender, e) =>
+            {
+                tcs.SetResult(vm.SelectedItem);
+            };
+            
+            return await tcs.Task;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"BottomSheetService error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw;
+        }
+    }
 }

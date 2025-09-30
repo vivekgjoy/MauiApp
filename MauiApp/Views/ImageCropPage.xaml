@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             x:Class="MauiApp.Views.ImageCropPage"
+             Title="Crop Image">
+
+    <Grid>
+        <!-- Background -->
+        <BoxView Background="{StaticResource PrimaryRed}" />
+        
+        <!-- Custom Header -->
+        <StackLayout VerticalOptions="Start" 
+                     Margin="0,60,0,0"
+                     Padding="20,10">
+            <Label Text="Crop Image"
+                   Style="{StaticResource TextH1}"
+                   TextColor="{StaticResource White}"
+                   HorizontalOptions="Center"
+                   FontSize="24"
+                   FontAttributes="Bold" />
+        </StackLayout>
+        
+        <!-- Main Content with Safe Area -->
+        <ScrollView Margin="0,120,0,0"
+                    Padding="20,0">
+            <StackLayout Spacing="20">
+                
+                <!-- Image Crop Container -->
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                       CornerRadius="12"
+                       Padding="0"
+                       HasShadow="True">
+                    <Grid HeightRequest="400">
+                        
+                        <!-- Image Display with Crop Overlay -->
+                        <skia:SKCanvasView x:Name="ImageCanvas"
+                                          PaintSurface="OnCanvasPaintSurface"
+                                          Touch="OnCanvasTouch"
+                                          BackgroundColor="Transparent" />
+                        
+                        <!-- Crop Overlay -->
+                        <Grid BackgroundColor="Transparent">
+                            <Frame x:Name="CropFrame"
+                                   BackgroundColor="Transparent"
+                                   BorderColor="{StaticResource PrimaryRed}"
+                                   CornerRadius="0"
+                                   HasShadow="False"
+                                   Margin="50,50,50,50">
+                            </Frame>
+                            
+                            <!-- Corner Handles -->
+                            <Grid>
+                                <!-- Top Left Handle -->
+                                <Frame x:Name="TopLeftHandle"
+                                       BackgroundColor="{StaticResource PrimaryRed}"
+                                       CornerRadius="15"
+                                       WidthRequest="30"
+                                       HeightRequest="30"
+                                       HorizontalOptions="Start"
+                                       VerticalOptions="Start"
+                                       Margin="35,35,0,0" />
+                                
+                                <!-- Top Right Handle -->
+                                <Frame x:Name="TopRightHandle"
+                                       BackgroundColor="{StaticResource PrimaryRed}"
+                                       CornerRadius="15"
+                                       WidthRequest="30"
+                                       HeightRequest="30"
+                                       HorizontalOptions="End"
+                                       VerticalOptions="Start"
+                                       Margin="0,35,35,0" />
+                                
+                                <!-- Bottom Left Handle -->
+                                <Frame x:Name="BottomLeftHandle"
+                                       BackgroundColor="{StaticResource PrimaryRed}"
+                                       CornerRadius="15"
+                                       WidthRequest="30"
+                                       HeightRequest="30"
+                                       HorizontalOptions="Start"
+                                       VerticalOptions="End"
+                                       Margin="35,0,0,35" />
+                                
+                                <!-- Bottom Right Handle -->
+                                <Frame x:Name="BottomRightHandle"
+                                       BackgroundColor="{StaticResource PrimaryRed}"
+                                       CornerRadius="15"
+                                       WidthRequest="30"
+                                       HeightRequest="30"
+                                       HorizontalOptions="End"
+                                       VerticalOptions="End"
+                                       Margin="0,0,35,35" />
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Frame>
+                
+                <!-- Instructions -->
+                <Label Text="Drag the corners to adjust the crop area"
+                       Style="{StaticResource TextBody}"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                
+                <!-- Action Buttons -->
+                <Grid ColumnDefinitions="*,*" 
+                      ColumnSpacing="15"
+                      Margin="0,20,0,0">
+                    
+                    <!-- Cancel Button -->
+                    <Button Grid.Column="0"
+                            Text="Cancel"
+                            Style="{StaticResource SecondaryButton}"
+                            Clicked="OnCancelClicked" />
+                    
+                    <!-- Crop Button -->
+                    <Button Grid.Column="1"
+                            Text="Crop Image"
+                            Style="{StaticResource PrimaryButton}"
+                            Clicked="OnCropClicked" />
+                </Grid>
+                
+            </StackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

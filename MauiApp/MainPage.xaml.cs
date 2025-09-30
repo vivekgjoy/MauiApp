@@ -13,6 +13,18 @@ public partial class MainPage : ContentPage
         _authenticationService = ServiceHelper.GetService<IAuthenticationService>();
     }
 
+    private async void OnAddReportsClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("//AddReportPage");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to navigate to Add Reports: {ex.Message}", "OK");
+        }
+    }
+
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
         try

@@ -35,4 +35,16 @@
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
+    <!-- Add Report Page Route -->
+    <ShellContent
+        Title="Add Report"
+        ContentTemplate="{DataTemplate views:AddReportPage}"
+        Route="AddReportPage" />
+
+    <!-- Image Crop Page Route -->
+    <ShellContent
+        Title="Crop Image"
+        ContentTemplate="{DataTemplate views:ImageCropPage}"
+        Route="ImageCropPage" />
+
 </Shell>

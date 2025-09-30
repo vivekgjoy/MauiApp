@@ -5,6 +5,8 @@ using MauiApp.Core.Services;
 using MauiApp.ViewModels;
 using MauiApp.Views;
 using Microsoft.Maui.LifecycleEvents;
+using CommunityToolkit.Maui;
+using SkiaSharp.Views.Maui.Controls;
 #if ANDROID
 using Android.OS;
 using Android.Views;
@@ -21,8 +23,12 @@ namespace MauiApp
             var builder = MauiAppType.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureMauiHandlers(handlers =>
                 {
+                    // Register SkiaSharp handlers
+                    handlers.AddHandler<SKCanvasView, SkiaSharp.Views.Maui.Handlers.SKCanvasViewHandler>();
+                    
 #if ANDROID
                     // Remove Android underline/background for Entry and Picker
                     EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
@@ -32,6 +38,14 @@ namespace MauiApp
                     PickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
                     {
                         handler.PlatformView.Background = null;
+                    });
+                    
+                    // Fix Editor underline and cursor color
+                    EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+                    {
+                        handler.PlatformView.Background = null;
+                        handler.PlatformView.SetTextCursorDrawable(0); // Remove underline
+                        handler.PlatformView.SetTextColor(Android.Graphics.Color.White); // Set cursor color
                     });
 #endif
                 })
@@ -67,6 +81,8 @@ namespace MauiApp
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<BottomSheetSelectionPage>();
+            builder.Services.AddTransient<AddReportPage>();
+            builder.Services.AddTransient<ImageCropPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();
