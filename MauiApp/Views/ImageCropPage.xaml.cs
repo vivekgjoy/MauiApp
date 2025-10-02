@@ -1,25 +1,25 @@
+using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Storage;
 using SkiaSharp;
-using SkiaSharp.Views.Maui;
-using System.Windows.Input;
 
 namespace MauiApp.Views;
 
 public partial class ImageCropPage : ContentPage
 {
-    private SKBitmap? _originalImage;
-    private SKBitmap? _displayImage;
-    private SKRect _cropRect;
-    private bool _isDragging = false;
-    private string? _draggedHandle;
-    private Point _lastTouchPoint;
-    private double _canvasWidth;
-    private double _canvasHeight;
-    private double _imageScaleX;
-    private double _imageScaleY;
-    private double _imageOffsetX;
-    private double _imageOffsetY;
+    private string? _imagePath;
+    private double _left = 50, _top = 50, _right = 300, _bottom = 400;
 
-    public string? ImagePath { get; set; }
+    public string? ImagePath
+    {
+        get => _imagePath;
+        set
+        {
+            _imagePath = value;
+            if (!string.IsNullOrEmpty(value))
+                CropImage.Source = ImageSource.FromFile(value);
+        }
+    }
+
     public string? CroppedImagePath { get; private set; }
 
     public ImageCropPage()
@@ -27,357 +27,152 @@ public partial class ImageCropPage : ContentPage
         InitializeComponent();
     }
 
-    protected override async void OnAppearing()
+    private void OnHandlePanUpdated(object sender, PanUpdatedEventArgs e)
     {
-        base.OnAppearing();
-        
-        if (!string.IsNullOrEmpty(ImagePath))
-        {
-            await LoadImage();
-        }
-    }
-
-    private async Task LoadImage()
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(ImagePath) || !File.Exists(ImagePath))
-            {
-                await DisplayAlert("Error", "Image file not found", "OK");
-                await Navigation.PopAsync();
+        if (e.StatusType != GestureStatus.Running || sender is not Frame frame)
                 return;
-            }
 
-            using var stream = File.OpenRead(ImagePath);
-            _originalImage = SKBitmap.Decode(stream);
-            
-            if (_originalImage == null)
-            {
-                await DisplayAlert("Error", "Failed to load image", "OK");
-                await Navigation.PopAsync();
-                return;
-            }
+        double dx = e.TotalX;
+        double dy = e.TotalY;
 
-            // Create display image that fits the canvas
-            _displayImage = ResizeImageToFit(_originalImage, 400, 400);
-            
-            // Initialize crop rectangle (center 60% of the image)
-            var imageWidth = _displayImage.Width;
-            var imageHeight = _displayImage.Height;
-            var cropWidth = imageWidth * 0.6;
-            var cropHeight = imageHeight * 0.6;
-            var cropX = (imageWidth - cropWidth) / 2;
-            var cropY = (imageHeight - cropHeight) / 2;
-            
-            _cropRect = new SKRect((float)cropX, (float)cropY, (float)(cropX + cropWidth), (float)(cropY + cropHeight));
-            
-            ImageCanvas.InvalidateSurface();
-        }
-        catch (Exception ex)
+        if (frame == TopLeftHandle)
         {
-            await DisplayAlert("Error", $"Failed to load image: {ex.Message}", "OK");
-            await Navigation.PopAsync();
+            _left = Math.Max(0, _left + dx);
+            _top = Math.Max(0, _top + dy);
         }
+        else if (frame == TopRightHandle)
+        {
+            _right = Math.Max(_left + 50, _right + dx);
+            _top = Math.Max(0, _top + dy);
+        }
+        else if (frame == BottomLeftHandle)
+        {
+            _left = Math.Max(0, _left + dx);
+            _bottom = Math.Max(_top + 50, _bottom + dy);
+        }
+        else if (frame == BottomRightHandle)
+        {
+            _right = Math.Max(_left + 50, _right + dx);
+            _bottom = Math.Max(_top + 50, _bottom + dy);
+        }
+
+        UpdateCropOverlay();
     }
 
-    private SKBitmap ResizeImageToFit(SKBitmap original, int maxWidth, int maxHeight)
+    private void UpdateCropOverlay()
     {
-        var scaleX = (double)maxWidth / original.Width;
-        var scaleY = (double)maxHeight / original.Height;
-        var scale = Math.Min(scaleX, scaleY);
-        
-        var newWidth = (int)(original.Width * scale);
-        var newHeight = (int)(original.Height * scale);
-        
-        return original.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.High);
-    }
+        // Update rectangle bounds
+        AbsoluteLayout.SetLayoutBounds(CropRectangle, new Rect(_left, _top, _right - _left, _bottom - _top));
 
-    private void OnCanvasPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
-    {
-        var canvas = e.Surface.Canvas;
-        canvas.Clear(SKColors.Transparent);
-
-        if (_displayImage == null) return;
-
-        _canvasWidth = e.Info.Width;
-        _canvasHeight = e.Info.Height;
-
-        // Calculate image position and scale
-        var imageWidth = _displayImage.Width;
-        var imageHeight = _displayImage.Height;
-        
-        _imageScaleX = _canvasWidth / imageWidth;
-        _imageScaleY = _canvasHeight / imageHeight;
-        _imageOffsetX = 0;
-        _imageOffsetY = 0;
-
-        // Draw the image
-        var imageRect = new SKRect(0, 0, (float)_canvasWidth, (float)_canvasHeight);
-        canvas.DrawBitmap(_displayImage, imageRect);
-
-        // Draw crop overlay
-        DrawCropOverlay(canvas);
-    }
-
-    private void DrawCropOverlay(SKCanvas canvas)
-    {
-        // Draw semi-transparent overlay outside crop area
-        var overlayPaint = new SKPaint
-        {
-            Color = SKColors.Black.WithAlpha(128),
-            Style = SKPaintStyle.Fill
-        };
-
-        // Top
-        canvas.DrawRect(0, 0, (float)_canvasWidth, (float)(_cropRect.Top * _imageScaleY), overlayPaint);
-        // Bottom
-        canvas.DrawRect(0, (float)(_cropRect.Bottom * _imageScaleY), (float)_canvasWidth, (float)_canvasHeight, overlayPaint);
-        // Left
-        canvas.DrawRect(0, (float)(_cropRect.Top * _imageScaleY), (float)(_cropRect.Left * _imageScaleX), (float)(_cropRect.Bottom * _imageScaleY), overlayPaint);
-        // Right
-        canvas.DrawRect((float)(_cropRect.Right * _imageScaleX), (float)(_cropRect.Top * _imageScaleY), (float)_canvasWidth, (float)(_cropRect.Bottom * _imageScaleY), overlayPaint);
-
-        // Draw crop border
-        var borderPaint = new SKPaint
-        {
-            Color = SKColors.Red,
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 3
-        };
-
-        var cropDisplayRect = new SKRect(
-            (float)(_cropRect.Left * _imageScaleX),
-            (float)(_cropRect.Top * _imageScaleY),
-            (float)(_cropRect.Right * _imageScaleX),
-            (float)(_cropRect.Bottom * _imageScaleY));
-
-        canvas.DrawRect(cropDisplayRect, borderPaint);
-    }
-
-    private void OnCanvasTouch(object? sender, SKTouchEventArgs e)
-    {
-        if (_displayImage == null) return;
-
-        var touchPoint = new Point(e.Location.X, e.Location.Y);
-
-        switch (e.ActionType)
-        {
-            case SKTouchAction.Pressed:
-                HandleTouchDown(touchPoint);
-                break;
-            case SKTouchAction.Moved:
-                HandleTouchMove(touchPoint);
-                break;
-            case SKTouchAction.Released:
-                HandleTouchUp(touchPoint);
-                break;
-        }
-
-        e.Handled = true;
-    }
-
-    private void HandleTouchDown(Point touchPoint)
-    {
-        _lastTouchPoint = touchPoint;
-        
-        // Check if touch is on any corner handle
-        var handleSize = 40; // Increased handle size for easier touch
-        var tolerance = 25; // Increased tolerance for easier touch
-        
-        var cropDisplayRect = new SKRect(
-            (float)(_cropRect.Left * _imageScaleX),
-            (float)(_cropRect.Top * _imageScaleY),
-            (float)(_cropRect.Right * _imageScaleX),
-            (float)(_cropRect.Bottom * _imageScaleY));
-
-        // Check corner handles first
-        if (IsPointInHandle(touchPoint, cropDisplayRect.Left, cropDisplayRect.Top, handleSize, tolerance))
-        {
-            _draggedHandle = "TopLeft";
-            _isDragging = true;
-        }
-        else if (IsPointInHandle(touchPoint, cropDisplayRect.Right, cropDisplayRect.Top, handleSize, tolerance))
-        {
-            _draggedHandle = "TopRight";
-            _isDragging = true;
-        }
-        else if (IsPointInHandle(touchPoint, cropDisplayRect.Left, cropDisplayRect.Bottom, handleSize, tolerance))
-        {
-            _draggedHandle = "BottomLeft";
-            _isDragging = true;
-        }
-        else if (IsPointInHandle(touchPoint, cropDisplayRect.Right, cropDisplayRect.Bottom, handleSize, tolerance))
-        {
-            _draggedHandle = "BottomRight";
-            _isDragging = true;
-        }
-        else if (cropDisplayRect.Contains((float)touchPoint.X, (float)touchPoint.Y))
-        {
-            // Touch is inside the crop rectangle - allow moving the entire rectangle
-            _draggedHandle = "Move";
-            _isDragging = true;
-        }
-        else
-        {
-            // Touch is outside crop area - reset crop rectangle to center
-            ResetCropRectangle();
-        }
-    }
-
-    private bool IsPointInHandle(Point touchPoint, float handleX, float handleY, float handleSize, float tolerance)
-    {
-        return touchPoint.X >= handleX - tolerance && touchPoint.X <= handleX + handleSize + tolerance &&
-               touchPoint.Y >= handleY - tolerance && touchPoint.Y <= handleY + handleSize + tolerance;
-    }
-
-    private void HandleTouchMove(Point touchPoint)
-    {
-        if (!_isDragging || _draggedHandle == null) return;
-
-        var deltaX = touchPoint.X - _lastTouchPoint.X;
-        var deltaY = touchPoint.Y - _lastTouchPoint.Y;
-
-        // Convert screen coordinates to image coordinates
-        var imageDeltaX = (float)(deltaX / _imageScaleX);
-        var imageDeltaY = (float)(deltaY / _imageScaleY);
-
-        // Update crop rectangle based on dragged handle
-        switch (_draggedHandle)
-        {
-            case "TopLeft":
-                _cropRect.Left = Math.Max(0, Math.Min(_cropRect.Right - 50, _cropRect.Left + imageDeltaX));
-                _cropRect.Top = Math.Max(0, Math.Min(_cropRect.Bottom - 50, _cropRect.Top + imageDeltaY));
-                break;
-            case "TopRight":
-                _cropRect.Right = Math.Min(_displayImage!.Width, Math.Max(_cropRect.Left + 50, _cropRect.Right + imageDeltaX));
-                _cropRect.Top = Math.Max(0, Math.Min(_cropRect.Bottom - 50, _cropRect.Top + imageDeltaY));
-                break;
-            case "BottomLeft":
-                _cropRect.Left = Math.Max(0, Math.Min(_cropRect.Right - 50, _cropRect.Left + imageDeltaX));
-                _cropRect.Bottom = Math.Min(_displayImage!.Height, Math.Max(_cropRect.Top + 50, _cropRect.Bottom + imageDeltaY));
-                break;
-            case "BottomRight":
-                _cropRect.Right = Math.Min(_displayImage!.Width, Math.Max(_cropRect.Left + 50, _cropRect.Right + imageDeltaX));
-                _cropRect.Bottom = Math.Min(_displayImage!.Height, Math.Max(_cropRect.Top + 50, _cropRect.Bottom + imageDeltaY));
-                break;
-            case "Move":
-                // Move the entire crop rectangle
-                var newLeft = _cropRect.Left + imageDeltaX;
-                var newTop = _cropRect.Top + imageDeltaY;
-                var newRight = _cropRect.Right + imageDeltaX;
-                var newBottom = _cropRect.Bottom + imageDeltaY;
-                
-                // Ensure the crop rectangle stays within image bounds
-                if (newLeft >= 0 && newRight <= _displayImage!.Width && newTop >= 0 && newBottom <= _displayImage!.Height)
-                {
-                    _cropRect.Left = newLeft;
-                    _cropRect.Top = newTop;
-                    _cropRect.Right = newRight;
-                    _cropRect.Bottom = newBottom;
-                }
-                break;
-        }
-
-        _lastTouchPoint = touchPoint;
-        ImageCanvas.InvalidateSurface();
-    }
-
-    private void HandleTouchUp(Point touchPoint)
-    {
-        _isDragging = false;
-        _draggedHandle = null;
-    }
-
-    private async void OnCancelClicked(object sender, EventArgs e)
-    {
-        await Navigation.PopAsync();
+        // Update handle positions
+        AbsoluteLayout.SetLayoutBounds(TopLeftHandle, new Rect(_left - 15, _top - 15, 30, 30));
+        AbsoluteLayout.SetLayoutBounds(TopRightHandle, new Rect(_right - 15, _top - 15, 30, 30));
+        AbsoluteLayout.SetLayoutBounds(BottomLeftHandle, new Rect(_left - 15, _bottom - 15, 30, 30));
+        AbsoluteLayout.SetLayoutBounds(BottomRightHandle, new Rect(_right - 15, _bottom - 15, 30, 30));
     }
 
     private async void OnCropClicked(object sender, EventArgs e)
     {
+        if (string.IsNullOrEmpty(_imagePath))
+        {
+            await DisplayAlert("Error", "No image selected", "OK");
+            return;
+        }
+
         try
         {
-            if (_originalImage == null)
+            var croppedImagePath = await CropImageAsync(_imagePath);
+
+            if (string.IsNullOrEmpty(croppedImagePath))
             {
-                await DisplayAlert("Error", "No image to crop", "OK");
+                await DisplayAlert("Error", "Failed to crop image", "OK");
                 return;
             }
 
-            // Calculate crop rectangle in original image coordinates
-            var originalWidth = _originalImage.Width;
-            var originalHeight = _originalImage.Height;
-            var displayWidth = _displayImage!.Width;
-            var displayHeight = _displayImage.Height;
-
-            var scaleX = (double)originalWidth / displayWidth;
-            var scaleY = (double)originalHeight / displayHeight;
-
-            var originalCropRect = new SKRectI(
-                (int)(_cropRect.Left * scaleX),
-                (int)(_cropRect.Top * scaleY),
-                (int)(_cropRect.Right * scaleX),
-                (int)(_cropRect.Bottom * scaleY));
-
-            // Ensure crop rectangle is within bounds
-            originalCropRect.Left = Math.Max(0, originalCropRect.Left);
-            originalCropRect.Top = Math.Max(0, originalCropRect.Top);
-            originalCropRect.Right = Math.Min(originalWidth, originalCropRect.Right);
-            originalCropRect.Bottom = Math.Min(originalHeight, originalCropRect.Bottom);
-
-            // Crop the image
-            var croppedBitmap = new SKBitmap(originalCropRect.Width, originalCropRect.Height);
-            using var canvas = new SKCanvas(croppedBitmap);
-            canvas.DrawBitmap(_originalImage, originalCropRect, new SKRect(0, 0, originalCropRect.Width, originalCropRect.Height));
-
-            // Save cropped image
-            var croppedImagePath = await SaveCroppedImage(croppedBitmap);
             CroppedImagePath = croppedImagePath;
 
-            // Navigate back to AddReportPage with cropped image
-            await Navigation.PopAsync();
+            // Navigate to ImageEditPage with the cropped image
+            var imageEditPage = new ImageEditPage { ImagePath = croppedImagePath };
+            await Navigation.PushAsync(imageEditPage);
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to crop image: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Failed: {ex.Message}", "OK");
         }
     }
 
-    private async Task<string> SaveCroppedImage(SKBitmap croppedBitmap)
+    private async Task<string?> CropImageAsync(string imagePath)
     {
-        var fileName = $"cropped_{Guid.NewGuid()}.jpg";
-        var filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
+        try
+        {
+            if (!File.Exists(imagePath))
+                return null;
+
+            using var originalImage = SKBitmap.Decode(imagePath);
+            if (originalImage == null)
+                return null;
+
+            var imageWidth = originalImage.Width;
+            var imageHeight = originalImage.Height;
+
+            var displayWidth = CropImage.Width;
+            var displayHeight = CropImage.Height;
+
+            int actualLeft, actualTop, actualRight, actualBottom;
+
+            if (displayWidth <= 0 || displayHeight <= 0)
+            {
+                // Fallback to full image if display dimensions unavailable
+                actualLeft = 0;
+                actualTop = 0;
+                actualRight = imageWidth;
+                actualBottom = imageHeight;
+            }
+            else
+            {
+                var scaleX = imageWidth / displayWidth;
+                var scaleY = imageHeight / displayHeight;
+
+                actualLeft = (int)(_left * scaleX);
+                actualTop = (int)(_top * scaleY);
+                actualRight = (int)(_right * scaleX);
+                actualBottom = (int)(_bottom * scaleY);
+
+                // Clamp to image bounds
+                actualLeft = Math.Max(0, Math.Min(actualLeft, imageWidth - 1));
+                actualTop = Math.Max(0, Math.Min(actualTop, imageHeight - 1));
+                actualRight = Math.Max(actualLeft + 1, Math.Min(actualRight, imageWidth));
+                actualBottom = Math.Max(actualTop + 1, Math.Min(actualBottom, imageHeight));
+            }
+
+            var cropWidth = actualRight - actualLeft;
+            var cropHeight = actualBottom - actualTop;
+
+            if (cropWidth <= 0 || cropHeight <= 0)
+                return null;
+
+            using var croppedBitmap = new SKBitmap(cropWidth, cropHeight);
+            using (var canvas = new SKCanvas(croppedBitmap))
+            {
+                var srcRect = new SKRect(actualLeft, actualTop, actualRight, actualBottom);
+                var destRect = new SKRect(0, 0, cropWidth, cropHeight);
+                canvas.DrawBitmap(originalImage, srcRect, destRect);
+            }
+
+            var cachePath = FileSystem.CacheDirectory;
+            var croppedFileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            var croppedImagePath = Path.Combine(cachePath, croppedFileName);
 
         using var image = SKImage.FromBitmap(croppedBitmap);
         using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
-        using var stream = File.OpenWrite(filePath);
+            using var stream = File.Create(croppedImagePath);
         data.SaveTo(stream);
 
-        return filePath;
-    }
-
-    private void ResetCropRectangle()
-    {
-        if (_displayImage != null)
-        {
-            // Set initial crop rectangle to center 60% of image
-            var imageWidth = _displayImage.Width;
-            var imageHeight = _displayImage.Height;
-            var cropWidth = imageWidth * 0.6;
-            var cropHeight = imageHeight * 0.6;
-            var cropX = (imageWidth - cropWidth) / 2;
-            var cropY = (imageHeight - cropHeight) / 2;
-            
-            _cropRect = new SKRect((float)cropX, (float)cropY, (float)(cropX + cropWidth), (float)(cropY + cropHeight));
-            ImageCanvas.InvalidateSurface();
+            return croppedImagePath;
         }
-    }
-
-    protected override void OnDisappearing()
-    {
-        base.OnDisappearing();
-        
-        // Clean up resources
-        _originalImage?.Dispose();
-        _displayImage?.Dispose();
+        catch
+        {
+            return null;
+        }
     }
 }

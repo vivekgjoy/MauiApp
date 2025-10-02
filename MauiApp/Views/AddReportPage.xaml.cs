@@ -110,8 +110,8 @@ public partial class AddReportPage : ContentPage
 
             if (photo != null)
             {
-                _selectedImagePaths.Add(photo.FullPath);
-                await UpdateImagesCollection();
+                // Automatically navigate to cropping page instead of adding directly
+                await NavigateToImageEditing(photo.FullPath);
             }
         }
         catch (Exception ex)
@@ -224,6 +224,35 @@ public partial class AddReportPage : ContentPage
         _selectedImagePaths.Remove(imagePath);
         await UpdateImagesCollection();
     }
+
+    private async Task NavigateToImageEditing(string imagePath)
+    {
+        try
+        {
+            var imageCropPage = new ImageCropPage
+            {
+                ImagePath = imagePath
+            };
+
+            await Navigation.PushAsync(imageCropPage);
+
+            // Wait for the page to return and get the edited image path
+            imageCropPage.Disappearing += async (s, args) =>
+            {
+                if (!string.IsNullOrEmpty(imageCropPage.CroppedImagePath))
+                {
+                    // Add the edited image to the collection
+                    _selectedImagePaths.Add(imageCropPage.CroppedImagePath);
+                    await UpdateImagesCollection();
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK");
+        }
+    }
+
 
     private async void OnBackClicked(object sender, EventArgs e)
     {
