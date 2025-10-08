@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:MauiApp.Views.Components"
+             x:Class="MauiApp.Views.ImageCommentPage"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Black}}">
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          RowSpacing="0"
+          Padding="0">
+
+        <!-- Generic Navigation Bar -->
+        <components:GenericNavigationBar Grid.Row="0"
+                                         Title="Add Comment"
+                                         Margin="0,0,0,0"
+                                         x:Name="NavigationBar" />
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1"
+                    Padding="20"
+                    Margin="0">
+            <StackLayout Spacing="20">
+
+                <!-- Image Preview -->
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                       CornerRadius="12"
+                       Padding="0"
+                       HasShadow="True">
+                    <Grid HeightRequest="200">
+                        <Image x:Name="ImagePreview"
+                               Aspect="AspectFit"
+                               BackgroundColor="LightGray" />
+                    </Grid>
+                </Frame>
+
+                <!-- Comment Section -->
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                       CornerRadius="12"
+                       Padding="20"
+                       HasShadow="True">
+                    <StackLayout Spacing="15">
+                        <Label Text="Add Comment (Optional)"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+                        
+                        <Editor x:Name="CommentEditor"
+                                Placeholder="Enter your comment about this image..."
+                                PlaceholderColor="{StaticResource TextHint}"
+                                TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}"
+                                BackgroundColor="Transparent"
+                                FontSize="16"
+                                HeightRequest="120"
+                                AutoSize="TextChanges" />
+                    </StackLayout>
+                </Frame>
+
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Action Buttons -->
+        <Frame Grid.Row="2"
+               BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+               CornerRadius="0"
+               Padding="20"
+               HasShadow="True"
+               Margin="0">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                <Button Grid.Column="0"
+                        Text="Skip"
+                        Style="{StaticResource SecondaryButton}"
+                        Clicked="OnSkipClicked" />
+                <Button Grid.Column="1"
+                        Text="Save &amp; Continue"
+                        Style="{StaticResource PrimaryButton}"
+                        Clicked="OnSaveAndContinueClicked" />
+            </Grid>
+        </Frame>
+
+    </Grid>
+</ContentPage>

@@ -1,186 +1,644 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Maui.Controls;
 using SkiaSharp;
+using SkiaSharp.Views.Maui;
+using SkiaSharp.Views.Maui.Controls;
+using System.Threading.Tasks;
 
-namespace MauiApp.Views;
-
-public partial class ImageEditPage : ContentPage
+namespace MauiApp.Views
 {
-    private string? _imagePath;
-    private SKColor _currentColor = SKColors.Red;
-    private float _brushSize = 5f;
-    private string _currentTool = "Brush";
-    private string _currentSymbol = "→";
+    public partial class ImageEditPage : ContentPage
+    {
+        private string? _imagePath;
+        private SKColor _currentColor = SKColors.Red;
+        private float _brushSize = 5f;
+        private ToolMode _currentTool = ToolMode.Brush;
 
-    public string? ImagePath 
-    { 
-        get => _imagePath; 
-        set 
-        { 
-            _imagePath = value;
-            if (!string.IsNullOrEmpty(value))
+        private readonly List<IDrawableItem> _items = new();
+        private readonly Stack<IDrawableItem> _undoStack = new();
+        private readonly Stack<IDrawableItem> _redoStack = new();
+
+        private SKPath? _currentPath;
+        private SKPoint _startPoint;
+        private IDrawableItem? _tempShape;
+        private IDrawableItem? _selectedItem;
+
+        private bool _isDraggingItem = false;
+        private SKPoint _lastDragPoint;
+
+        // Multi-touch tracking
+        private readonly Dictionary<long, SKPoint> _activeTouches = new();
+        private float _initialDistance = 0f;
+        private float _initialRotation = 0f;
+        private SKRect _originalBounds;
+
+        public string? ImagePath
+        {
+            get => _imagePath;
+            set
             {
-                EditImage.Source = ImageSource.FromFile(value);
+                _imagePath = value;
+                if (!string.IsNullOrEmpty(value))
+                    EditImage.Source = ImageSource.FromFile(value);
             }
-        } 
-    }
-    
-    public string? EditedImagePath { get; private set; }
-
-    public ImageEditPage()
-    {
-        InitializeComponent();
-        UpdateToolSelection("Brush");
-    }
-
-    private void OnColorButtonClicked(object sender, EventArgs e)
-    {
-        if (sender == RedColorButton)
-            OnColorSelected(SKColors.Red);
-        else if (sender == BlueColorButton)
-            OnColorSelected(SKColors.Blue);
-        else if (sender == GreenColorButton)
-            OnColorSelected(SKColors.Green);
-        else if (sender == BlackColorButton)
-            OnColorSelected(SKColors.Black);
-    }
-
-    private void OnColorSelected(SKColor color)
-    {
-        _currentColor = color;
-        UpdateColorSelection(color);
-    }
-
-    private void UpdateColorSelection(SKColor selectedColor)
-    {
-        // Reset all color buttons to normal state
-        RedColorButton.Text = "";
-        BlueColorButton.Text = "";
-        GreenColorButton.Text = "";
-        BlackColorButton.Text = "";
-
-        // Highlight selected color with a checkmark
-        if (selectedColor == SKColors.Red)
-        {
-            RedColorButton.Text = "✓";
-            RedColorButton.TextColor = Colors.White;
         }
-        else if (selectedColor == SKColors.Blue)
+
+        public ImageEditPage()
         {
-            BlueColorButton.Text = "✓";
-            BlueColorButton.TextColor = Colors.White;
+            InitializeComponent();
+            BrushSizeSlider.Value = _brushSize;
+            BrushSizeLabel.Text = $"{_brushSize:F0}px";
+            UpdateToolSelectionUI();
         }
-        else if (selectedColor == SKColors.Green)
+
+        // ---------------- UI events ----------------
+        private void OnColorButtonClicked(object sender, EventArgs e)
         {
-            GreenColorButton.Text = "✓";
-            GreenColorButton.TextColor = Colors.White;
+            if (sender == RedColorButton) SetColor(SKColors.Red);
+            else if (sender == BlueColorButton) SetColor(SKColors.Blue);
+            else if (sender == GreenColorButton) SetColor(SKColors.Green);
+            else if (sender == BlackColorButton) SetColor(SKColors.Black);
         }
-        else if (selectedColor == SKColors.Black)
+
+        private void SetColor(SKColor color)
         {
-            BlackColorButton.Text = "✓";
-            BlackColorButton.TextColor = Colors.White;
+            _currentColor = color;
+            RedColorButton.Text = _currentColor == SKColors.Red ? "✓" : "";
+            BlueColorButton.Text = _currentColor == SKColors.Blue ? "✓" : "";
+            GreenColorButton.Text = _currentColor == SKColors.Green ? "✓" : "";
+            BlackColorButton.Text = _currentColor == SKColors.Black ? "✓" : "";
         }
-    }
 
-    private void OnBrushSizeChanged(object sender, ValueChangedEventArgs e)
-    {
-        _brushSize = (float)e.NewValue;
-        BrushSizeLabel.Text = $"{_brushSize:F0}px";
-    }
-
-    private void OnToolSelected(object sender, EventArgs e)
-    {
-        if (sender == BrushToolButton)
+        private void OnBrushSizeChanged(object sender, ValueChangedEventArgs e)
         {
-            _currentTool = "Brush";
-            UpdateToolSelection("Brush");
+            _brushSize = (float)e.NewValue;
+            BrushSizeLabel.Text = $"{_brushSize:F0}px";
         }
-        else if (sender == EraserToolButton)
+
+        private void OnToolSelected(object sender, EventArgs e)
         {
-            _currentTool = "Eraser";
-            UpdateToolSelection("Eraser");
+            if (sender == BrushToolButton) _currentTool = ToolMode.Brush;
+            else if (sender == EraserToolButton) _currentTool = ToolMode.Eraser;
+            else if (sender == ArrowToolButton) _currentTool = ToolMode.Arrow;
+            else if (sender == CircleToolButton) _currentTool = ToolMode.Circle;
+            else if (sender == SquareToolButton) _currentTool = ToolMode.Square;
+            else if (sender == CheckToolButton) _currentTool = ToolMode.Check;
+            else if (sender == CrossToolButton) _currentTool = ToolMode.Cross;
+
+            _selectedItem = null;
+            UpdateToolSelectionUI();
         }
-    }
 
-    private void UpdateToolSelection(string selectedTool)
-    {
-        // Reset all tool buttons
-        BrushToolButton.BackgroundColor = Colors.Transparent;
-        BrushToolButton.TextColor = Color.FromArgb("#ED1C24");
-
-        EraserToolButton.BackgroundColor = Colors.Transparent;
-        EraserToolButton.TextColor = Color.FromArgb("#ED1C24");
-
-        UndoButton.BackgroundColor = Colors.Transparent;
-        UndoButton.TextColor = Color.FromArgb("#ED1C24");
-
-        RedoButton.BackgroundColor = Colors.Transparent;
-        RedoButton.TextColor = Color.FromArgb("#ED1C24");
-
-        // Highlight selected tool
-        if (selectedTool == "Brush")
+        private void UpdateToolSelectionUI()
         {
-            BrushToolButton.BackgroundColor = Color.FromArgb("#ED1C24");
-            BrushToolButton.TextColor = Colors.White;
-        }
-        else if (selectedTool == "Eraser")
-        {
-            EraserToolButton.BackgroundColor = Color.FromArgb("#ED1C24");
-            EraserToolButton.TextColor = Colors.White;
-        }
-    }
-
-    private void OnSymbolSelected(object sender, EventArgs e)
-    {
-        _currentTool = "Symbol";
-        
-        if (sender == ArrowSymbolButton)
-            _currentSymbol = "→";
-        else if (sender == CheckSymbolButton)
-            _currentSymbol = "✓";
-        else if (sender == CrossSymbolButton)
-            _currentSymbol = "✗";
-        else if (sender == CircleSymbolButton)
-            _currentSymbol = "○";
-        else if (sender == SquareSymbolButton)
-            _currentSymbol = "□";
-    }
-
-    private void OnUndoClicked(object sender, EventArgs e)
-    {
-        // Simplified undo - just show a message for now
-        DisplayAlert("Info", "Undo functionality would be implemented here", "OK");
-    }
-
-    private void OnRedoClicked(object sender, EventArgs e)
-    {
-        // Simplified redo - just show a message for now
-        DisplayAlert("Info", "Redo functionality would be implemented here", "OK");
-    }
-
-    private async void OnBackClicked(object sender, EventArgs e)
-    {
-        await Navigation.PopAsync();
-    }
-
-    private async void OnSaveClicked(object sender, EventArgs e)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(_imagePath))
+            foreach (var btn in new[] { BrushToolButton, EraserToolButton, ArrowToolButton, CircleToolButton, SquareToolButton, CheckToolButton, CrossToolButton })
             {
-                await DisplayAlert("Error", "No image to save", "OK");
-                return;
+                btn.BackgroundColor = Colors.Transparent;
+                btn.TextColor = Color.FromArgb("#ED1C24");
             }
 
-            // For now, just copy the original image
-            // In a real implementation, you would apply the edits here
-            EditedImagePath = _imagePath;
+            Button? active = _currentTool switch
+            {
+                ToolMode.Brush => BrushToolButton,
+                ToolMode.Eraser => EraserToolButton,
+                ToolMode.Arrow => ArrowToolButton,
+                ToolMode.Circle => CircleToolButton,
+                ToolMode.Square => SquareToolButton,
+                ToolMode.Check => CheckToolButton,
+                ToolMode.Cross => CrossToolButton,
+                _ => null
+            };
 
-            // Navigate back to AddReportPage with edited image
-            await Navigation.PopAsync();
+            if (active != null)
+            {
+                active.BackgroundColor = Color.FromArgb("#ED1C24");
+                active.TextColor = Colors.White;
+            }
+            CanvasView.InvalidateSurface();
         }
-        catch (Exception ex)
+
+        private void OnUndoClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Error", $"Failed to save image: {ex.Message}", "OK");
+            if (_items.Count > 0)
+            {
+                var last = _items.Last();
+                _items.Remove(last);
+                _undoStack.Push(last);
+                CanvasView.InvalidateSurface();
+            }
         }
+
+        private void OnRedoClicked(object sender, EventArgs e)
+        {
+            if (_undoStack.Count > 0)
+            {
+                var redo = _undoStack.Pop();
+                _items.Add(redo);
+                CanvasView.InvalidateSurface();
+            }
+        }
+
+        private async void OnSaveClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_imagePath))
+                {
+                    await DisplayAlert("Error", "No image to save", "OK");
+                    return;
+                }
+
+                // Save the edited image with drawings
+                var editedImagePath = await SaveEditedImage();
+                
+                if (string.IsNullOrEmpty(editedImagePath))
+                {
+                    await DisplayAlert("Error", "Failed to save edited image", "OK");
+                    return;
+                }
+
+                // Navigate to ImageCommentPage to add comments and finalize
+                var imageCommentPage = new ImageCommentPage
+                {
+                    ImagePath = editedImagePath
+                };
+                
+                await Navigation.PushAsync(imageCommentPage);
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"Failed to save image: {ex.Message}", "OK");
+            }
+        }
+
+        private async Task<string?> SaveEditedImage()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_imagePath))
+                    return null;
+
+                // Load the original image
+                using var originalStream = System.IO.File.OpenRead(_imagePath);
+                using var originalBitmap = SKBitmap.Decode(originalStream);
+                
+                if (originalBitmap == null)
+                    return null;
+
+                // Create a new bitmap with the same size as the original
+                using var editedBitmap = new SKBitmap(originalBitmap.Width, originalBitmap.Height);
+                using var canvas = new SKCanvas(editedBitmap);
+                
+                // Draw the original image
+                canvas.DrawBitmap(originalBitmap, 0, 0);
+                
+                // Draw all the items (drawings) on top
+                foreach (var item in _items)
+                {
+                    item.Draw(canvas);
+                }
+
+                // Save the edited image
+                var cachePath = FileSystem.CacheDirectory;
+                var editedFileName = $"edited_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+                var editedImagePath = System.IO.Path.Combine(cachePath, editedFileName);
+
+                using var image = SKImage.FromBitmap(editedBitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
+                using var stream = System.IO.File.Create(editedImagePath);
+                data.SaveTo(stream);
+
+                return editedImagePath;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving edited image: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async void OnBackClicked(object sender, EventArgs e) => await Navigation.PopAsync();
+
+        // ---------------- Touch handling ----------------
+        private void OnTouchEffectAction(object sender, SKTouchEventArgs e)
+        {
+            var id = e.Id;
+            var pt = e.Location;
+
+            switch (e.ActionType)
+            {
+                case SKTouchAction.Pressed:
+                    _activeTouches[id] = pt;
+
+                    if (_activeTouches.Count == 1)
+                    {
+                        // Single-finger flow: hit-test for selection/move or start draw/shape
+                        var hit = HitTestItem(pt);
+                        if (hit != null && _currentTool != ToolMode.Brush && _currentTool != ToolMode.Eraser)
+                        {
+                            _selectedItem = hit;
+                            _isDraggingItem = true;
+                            _lastDragPoint = pt;
+                        }
+                        else if (_currentTool == ToolMode.Brush)
+                        {
+                            _currentPath = new SKPath();
+                            _currentPath.MoveTo(pt);
+                            var p = new PathDrawable(new SKPath(_currentPath), _currentColor, _brushSize);
+                            _items.Add(p);
+                            _undoStack.Clear(); _redoStack.Clear();
+                        }
+                        else if (_currentTool == ToolMode.Eraser)
+                        {
+                            _currentPath = new SKPath();
+                            _currentPath.MoveTo(pt);
+                            var p = new PathDrawable(new SKPath(_currentPath), SKColors.Transparent, _brushSize, true);
+                            _items.Add(p);
+                            _undoStack.Clear(); _redoStack.Clear();
+                        }
+                        else
+                        {
+                            _startPoint = pt;
+                            _tempShape = CreateShapeItem(_currentTool, _startPoint, pt, _currentColor, _brushSize);
+                        }
+                    }
+                    else if (_activeTouches.Count == 2 && _selectedItem != null)
+                    {
+                        // Start pinch/rotate: remember initial distance/angle and bounds
+                        var pts = _activeTouches.Values.ToList();
+                        _initialDistance = Distance(pts[0], pts[1]);
+                        _initialRotation = GetAngle(pts[0], pts[1]);
+                        _originalBounds = _selectedItem.GetBounds();
+                    }
+                    break;
+
+                case SKTouchAction.Moved:
+                    if (_activeTouches.ContainsKey(id))
+                        _activeTouches[id] = pt;
+
+                    if (_activeTouches.Count == 1)
+                    {
+                        // Single finger move/draw/shape-resize preview
+                        var only = _activeTouches.Values.First();
+                        if (_isDraggingItem && _selectedItem != null)
+                        {
+                            var dx = only.X - _lastDragPoint.X;
+                            var dy = only.Y - _lastDragPoint.Y;
+                            _selectedItem.Translate(dx, dy);
+                            _lastDragPoint = only;
+                            CanvasView.InvalidateSurface();
+                        }
+                        else if (_currentTool == ToolMode.Brush && _currentPath != null)
+                        {
+                            _currentPath.LineTo(only);
+                            if (_items.LastOrDefault() is PathDrawable lastPath)
+                                lastPath.Path.LineTo(only);
+                            CanvasView.InvalidateSurface();
+                        }
+                        else if (_currentTool == ToolMode.Eraser && _currentPath != null)
+                        {
+                            _currentPath.LineTo(only);
+                            if (_items.LastOrDefault() is PathDrawable lastPath)
+                                lastPath.Path.LineTo(only);
+                            CanvasView.InvalidateSurface();
+                        }
+                        else if (_tempShape != null)
+                        {
+                            _tempShape.UpdateGeometry(_startPoint, only);
+                            CanvasView.InvalidateSurface();
+                        }
+                    }
+                    else if (_activeTouches.Count == 2 && _selectedItem != null)
+                    {
+                        // two-finger pinch/rotate
+                        var pts = _activeTouches.Values.ToList();
+                        var newDist = Distance(pts[0], pts[1]);
+                        var newAngle = GetAngle(pts[0], pts[1]);
+
+                        // guard against division by zero (very small initial distance)
+                        if (_initialDistance <= 0f) _initialDistance = newDist != 0f ? newDist : 1f;
+
+                        var scale = newDist / _initialDistance;
+                        var rotationDelta = newAngle - _initialRotation;
+
+                        if (_selectedItem is RotatableDrawable rot)
+                        {
+                            rot.ScaleFromBounds(_originalBounds, scale);
+                            rot.ApplyRotation(rotationDelta);
+                            CanvasView.InvalidateSurface();
+                        }
+                    }
+                    break;
+
+                case SKTouchAction.Released:
+                case SKTouchAction.Cancelled:
+                    // remove the finger
+                    _activeTouches.Remove(id);
+
+                    // If all fingers removed, finalize and reset transient state
+                    if (_activeTouches.Count == 0)
+                    {
+                        _isDraggingItem = false;
+
+                        // finalize path
+                        _currentPath = null;
+
+                        // finalize temp shape into items
+                        if (_tempShape != null)
+                        {
+                            _items.Add(_tempShape);
+                            _tempShape = null;
+                        }
+
+                        // reset pinch/rotate state
+                        _initialDistance = 0f;
+                        _initialRotation = 0f;
+                        // keep selected item (optional): currently we clear selection so tools start fresh
+                        _selectedItem = null;
+
+                        CanvasView.InvalidateSurface();
+                    }
+                    else if (_activeTouches.Count == 1)
+                    {
+                        // if one finger remains after multi-touch, reset initial pinch values so future pinch restarts cleanly
+                        var remaining = _activeTouches.Values.First();
+                        _initialDistance = 0f;
+                        _initialRotation = 0f;
+                    }
+                    break;
+            }
+
+            e.Handled = true;
+        }
+
+        private float Distance(SKPoint a, SKPoint b) =>
+            (float)Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
+
+        private float GetAngle(SKPoint a, SKPoint b) =>
+            (float)Math.Atan2(b.Y - a.Y, b.X - a.X);
+
+        // ---------------- Drawing ----------------
+        private void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs e)
+        {
+            var canvas = e.Surface.Canvas;
+            canvas.Clear(SKColors.White);
+
+            if (!string.IsNullOrEmpty(ImagePath))
+            {
+                try
+                {
+                    using var stream = System.IO.File.OpenRead(ImagePath);
+                    using var bmp = SKBitmap.Decode(stream);
+                    if (bmp != null)
+                    {
+                        var rect = FitRectToCanvas(bmp.Width, bmp.Height, e.Info.Width, e.Info.Height);
+                        canvas.DrawBitmap(bmp, rect);
+                    }
+                }
+                catch { /* ignore preview load errors */ }
+            }
+
+            foreach (var i in _items)
+                i.Draw(canvas);
+
+            _tempShape?.Draw(canvas);
+        }
+
+        private SKRect FitRectToCanvas(int imgW, int imgH, int cw, int ch)
+        {
+            float ratio = Math.Min((float)cw / imgW, (float)ch / imgH);
+            float w = imgW * ratio, h = imgH * ratio;
+            float l = (cw - w) / 2, t = (ch - h) / 2;
+            return new SKRect(l, t, l + w, t + h);
+        }
+
+        // ---------------- Shapes & interfaces ----------------
+        private interface IDrawableItem
+        {
+            void Draw(SKCanvas canvas);
+            SKRect GetBounds();
+            void Translate(float dx, float dy);
+            void UpdateGeometry(SKPoint start, SKPoint end);
+        }
+
+        /// <summary>
+        /// Base class for drawables that support rotation & scaling from original bounds.
+        /// </summary>
+        private abstract class RotatableDrawable : IDrawableItem
+        {
+            protected float rotation = 0f;
+
+            public abstract void Draw(SKCanvas canvas);
+            public abstract SKRect GetBounds();
+            public abstract void Translate(float dx, float dy);
+            public abstract void UpdateGeometry(SKPoint start, SKPoint current);
+
+            /// <summary>Scale relative to the original bounds center.</summary>
+            public abstract void ScaleFromBounds(SKRect original, float scale);
+
+            /// <summary>Apply rotation delta (radians).</summary>
+            public void ApplyRotation(float delta) => rotation += delta;
+        }
+
+        private IDrawableItem? HitTestItem(SKPoint p)
+        {
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                var r = _items[i].GetBounds();
+                var expanded = r;
+                expanded.Inflate(10, 10); // mutate local copy
+                if (expanded.Contains(p)) return _items[i];
+            }
+            return null;
+        }
+
+        private IDrawableItem CreateShapeItem(ToolMode mode, SKPoint p1, SKPoint p2, SKColor color, float stroke)
+        {
+            var rect = new SKRect(Math.Min(p1.X, p2.X), Math.Min(p1.Y, p2.Y),
+                                  Math.Max(p1.X, p2.X), Math.Max(p1.Y, p2.Y));
+            return mode switch
+            {
+                ToolMode.Circle => new CircleDrawable(rect, color, stroke),
+                ToolMode.Square => new RectDrawable(rect, color, stroke),
+                ToolMode.Arrow => new ArrowDrawable(rect, color, stroke),
+                ToolMode.Check => new CheckDrawable(rect, color, stroke),
+                ToolMode.Cross => new CrossDrawable(rect, color, stroke),
+                _ => new RectDrawable(rect, color, stroke)
+            };
+        }
+
+        // ---------------- Drawable classes ----------------
+        private class RectDrawable : RotatableDrawable
+        {
+            public SKRect Rect;
+            public SKColor Color;
+            public float Stroke;
+
+            public RectDrawable(SKRect r, SKColor c, float s) { Rect = r; Color = c; Stroke = s; }
+
+            public override void Draw(SKCanvas c)
+            {
+                c.Save();
+                var center = new SKPoint(Rect.MidX, Rect.MidY);
+                c.Translate(center.X, center.Y);
+                c.RotateRadians(rotation);
+                c.Translate(-center.X, -center.Y);
+
+                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+                c.DrawRect(Rect, p);
+
+                c.Restore();
+            }
+
+            public override SKRect GetBounds() => Rect;
+
+            public override void Translate(float dx, float dy) => Rect = new SKRect(Rect.Left + dx, Rect.Top + dy, Rect.Right + dx, Rect.Bottom + dy);
+
+            public override void UpdateGeometry(SKPoint s, SKPoint e) =>
+                Rect = new SKRect(Math.Min(s.X, e.X), Math.Min(s.Y, e.Y), Math.Max(s.X, e.X), Math.Max(s.Y, e.Y));
+
+            public override void ScaleFromBounds(SKRect original, float scale)
+            {
+                var cx = (original.Left + original.Right) / 2f;
+                var cy = (original.Top + original.Bottom) / 2f;
+                var halfW = (original.Width / 2f) * scale;
+                var halfH = (original.Height / 2f) * scale;
+                Rect = new SKRect(cx - halfW, cy - halfH, cx + halfW, cy + halfH);
+            }
+        }
+
+        private class CircleDrawable : RectDrawable
+        {
+            public CircleDrawable(SKRect r, SKColor c, float s) : base(r, c, s) { }
+
+            public override void Draw(SKCanvas c)
+            {
+                c.Save();
+                var center = new SKPoint(Rect.MidX, Rect.MidY);
+                c.Translate(center.X, center.Y);
+                c.RotateRadians(rotation);
+                c.Translate(-center.X, -center.Y);
+
+                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+                c.DrawOval(Rect, p);
+
+                c.Restore();
+            }
+        }
+
+        private class ArrowDrawable : RectDrawable
+        {
+            public ArrowDrawable(SKRect r, SKColor c, float s) : base(r, c, s) { }
+
+            public override void Draw(SKCanvas c)
+            {
+                c.Save();
+                var center = new SKPoint(Rect.MidX, Rect.MidY);
+                c.Translate(center.X, center.Y);
+                c.RotateRadians(rotation);
+                c.Translate(-center.X, -center.Y);
+
+                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+
+                // draw line across the middle of rect
+                var start = new SKPoint(Rect.Left, Rect.MidY);
+                var end = new SKPoint(Rect.Right, Rect.MidY);
+                c.DrawLine(start, end, p);
+
+                // simple arrow head proportional to rect size
+                var len = Math.Min(20, Math.Max(8, Rect.Width / 6));
+                var angle = 0f; // horizontal line so angle 0; rotation handled by canvas
+                var left = new SKPoint(end.X - len * (float)Math.Cos(angle - Math.PI / 6), end.Y - len * (float)Math.Sin(angle - Math.PI / 6));
+                var right = new SKPoint(end.X - len * (float)Math.Cos(angle + Math.PI / 6), end.Y - len * (float)Math.Sin(angle + Math.PI / 6));
+                c.DrawLine(end, left, p);
+                c.DrawLine(end, right, p);
+
+                c.Restore();
+            }
+        }
+
+        private class CheckDrawable : RectDrawable
+        {
+            public CheckDrawable(SKRect r, SKColor c, float s) : base(r, c, s) { }
+
+            public override void Draw(SKCanvas c)
+            {
+                c.Save();
+                var center = new SKPoint(Rect.MidX, Rect.MidY);
+                c.Translate(center.X, center.Y);
+                c.RotateRadians(rotation);
+                c.Translate(-center.X, -center.Y);
+
+                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+                var path = new SKPath();
+                path.MoveTo(Rect.Left + Rect.Width * 0.15f, Rect.Top + Rect.Height * 0.55f);
+                path.LineTo(Rect.Left + Rect.Width * 0.40f, Rect.Top + Rect.Height * 0.80f);
+                path.LineTo(Rect.Left + Rect.Width * 0.85f, Rect.Top + Rect.Height * 0.25f);
+                c.DrawPath(path, p);
+
+                c.Restore();
+            }
+        }
+
+        private class CrossDrawable : RectDrawable
+        {
+            public CrossDrawable(SKRect r, SKColor c, float s) : base(r, c, s) { }
+
+            public override void Draw(SKCanvas c)
+            {
+                c.Save();
+                var center = new SKPoint(Rect.MidX, Rect.MidY);
+                c.Translate(center.X, center.Y);
+                c.RotateRadians(rotation);
+                c.Translate(-center.X, -center.Y);
+
+                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+                c.DrawLine(Rect.Left, Rect.Top, Rect.Right, Rect.Bottom, p);
+                c.DrawLine(Rect.Right, Rect.Top, Rect.Left, Rect.Bottom, p);
+
+                c.Restore();
+            }
+        }
+
+        private class PathDrawable : IDrawableItem
+        {
+            public SKPath Path { get; private set; }
+            public SKColor Color { get; private set; }
+            public float Stroke { get; private set; }
+            public bool IsEraser { get; private set; }
+
+            public PathDrawable(SKPath p, SKColor c, float s, bool isEraser = false)
+            {
+                Path = p; Color = c; Stroke = s; IsEraser = isEraser;
+            }
+
+            public void Draw(SKCanvas c)
+            {
+                using var p = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = Stroke,
+                    Color = Color,
+                    IsAntialias = true,
+                    StrokeCap = SKStrokeCap.Round,
+                    StrokeJoin = SKStrokeJoin.Round
+                };
+
+                if (IsEraser)
+                    p.BlendMode = SKBlendMode.Clear;
+
+                c.DrawPath(Path, p);
+            }
+
+            public SKRect GetBounds() => Path.Bounds;
+
+            public void Translate(float dx, float dy) => Path.Offset(dx, dy);
+
+            public void UpdateGeometry(SKPoint start, SKPoint current) => Path.LineTo(current);
+        }
+
+        private enum ToolMode { Brush, Eraser, Arrow, Circle, Square, Check, Cross }
     }
 }

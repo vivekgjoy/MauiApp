@@ -64,6 +64,9 @@ namespace MauiApp
             builder.Services.AddSingleton<ICredentialStorageService, CredentialStorageService>();
             builder.Services.AddSingleton<IAppLifecycleService, AppLifecycleService>();
             builder.Services.AddSingleton<IAppStateService, AppStateService>();
+            builder.Services.AddSingleton<IReportImageService, ReportImageService>();
+            builder.Services.AddSingleton<IPDFGeneratorService, PDFGeneratorService>();
+            builder.Services.AddSingleton<IReportStorageService, ReportStorageService>();
 
 #if ANDROID
             builder.Services.AddSingleton<IBiometricService, MauiApp.Platforms.Android.Services.BiometricService>();

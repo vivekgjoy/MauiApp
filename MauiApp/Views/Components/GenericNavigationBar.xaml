@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.Views.Components.GenericNavigationBar"
+             x:Name="NavigationBar">
+
+    <Grid BackgroundColor="{StaticResource PrimaryRed}"
+          HeightRequest="60"
+          Padding="15,10,15,10"
+          Margin="0,0,0,0">
+        
+        <Grid ColumnDefinitions="Auto,*,Auto"
+              VerticalOptions="Center">
+            
+            <!-- Back Button -->
+            <Button Grid.Column="0"
+                    x:Name="BackButton"
+                    BackgroundColor="Transparent"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    VerticalOptions="Center"
+                    Text="←"
+                    FontSize="24"
+                    TextColor="White"
+                    Clicked="OnBackClicked" />
+
+            <!-- Title -->
+            <Label Grid.Column="1"
+                   x:Name="TitleLabel"
+                   Text="{Binding Source={x:Reference NavigationBar}, Path=Title}"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   FontSize="20"
+                   FontAttributes="Bold" />
+
+            <!-- Right Action Button (Optional) -->
+            <Button Grid.Column="2"
+                    x:Name="RightActionButton"
+                    BackgroundColor="Transparent"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    VerticalOptions="Center"
+                    Text="{Binding Source={x:Reference NavigationBar}, Path=RightActionText}"
+                    FontSize="16"
+                    TextColor="White"
+                    IsVisible="{Binding Source={x:Reference NavigationBar}, Path=ShowRightAction}"
+                    Clicked="OnRightActionClicked" />
+        </Grid>
+    </Grid>
+</ContentView>

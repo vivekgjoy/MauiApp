@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- 
+    TEMPLATE FOR USING GENERIC NAVIGATION BAR IN ANY PAGE
+    
+    Copy this template and replace the content as needed:
+    
+    1. Replace "YourPageName" with your actual page class name
+    2. Replace "Your Page Title" with your page title
+    3. Add your page content inside the ScrollView
+    4. In your code-behind, add the NavigationBar.BackCommand setup
+-->
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:MauiApp.Views.Components"
+             x:Class="MauiApp.Views.YourPageName"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Generic Navigation Bar -->
+        <components:GenericNavigationBar Grid.Row="0"
+                                        Title="Your Page Title"
+                                        x:Name="NavigationBar" />
+
+        <!-- Your Page Content -->
+        <ScrollView Grid.Row="1"
+                    Padding="20,0">
+            <StackLayout Spacing="20">
+                
+                <!-- Add your page content here -->
+                <Label Text="Your page content goes here"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                
+            </StackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>
+

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.Views.PDFPreviewPage"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="LightGray">
+
+    <AbsoluteLayout>
+        <!-- Main Content -->
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+                
+                <!-- Header -->
+                <Label Text="PDF Preview Page"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="Red"
+                       HorizontalOptions="Center" />
+                
+                <!-- Test Label -->
+                <Label x:Name="TestLabel"
+                       Text="This is a test - page is loading"
+                       FontSize="16"
+                       TextColor="Blue"
+                       HorizontalOptions="Center" />
+                
+                <!-- Images Per Page -->
+                <Label Text="Images Per Page:"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="Black" />
+                
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                    <Button Grid.Column="0"
+                            Text="−"
+                            FontSize="20"
+                            FontAttributes="Bold"
+                            BackgroundColor="Red"
+                            TextColor="White"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnDecreaseImagesPerPage" />
+                    
+                    <Label Grid.Column="1"
+                           x:Name="ImagesPerPageLabel"
+                           Text="4"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           TextColor="Black" />
+                    
+                    <Button Grid.Column="2"
+                            Text="+"
+                            FontSize="20"
+                            FontAttributes="Bold"
+                            BackgroundColor="Red"
+                            TextColor="White"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnIncreaseImagesPerPage" />
+                </Grid>
+                
+                <!-- Total Images -->
+                <Label x:Name="TotalImagesLabel"
+                       Text="Total Images: 0"
+                       FontSize="16"
+                       TextColor="Black" />
+                
+                <!-- Preview Area -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="12"
+                       Padding="20"
+                       HasShadow="True">
+                    <StackLayout x:Name="PreviewContainer" Spacing="10" />
+                </Frame>
+                
+                <!-- Spacer for floating button -->
+                <BoxView HeightRequest="80" Color="Transparent" />
+                
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Floating Generate Button -->
+        <Button x:Name="GeneratePDFButton"
+                Text="Generate PDF"
+                FontSize="18"
+                FontAttributes="Bold"
+                BackgroundColor="Red"
+                TextColor="White"
+                WidthRequest="200"
+                HeightRequest="60"
+                CornerRadius="30"
+                Clicked="OnGeneratePDFClicked"
+                AbsoluteLayout.LayoutBounds="0.5,1,200,60"
+                AbsoluteLayout.LayoutFlags="PositionProportional" />
+        
+    </AbsoluteLayout>
+
+    <!-- Progress Overlay -->
+    <Grid x:Name="ProgressOverlay"
+          BackgroundColor="#80000000"
+          IsVisible="False">
+        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+               CornerRadius="12"
+               Padding="30"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               HasShadow="True">
+            <StackLayout Spacing="20" HorizontalOptions="Center">
+                <ActivityIndicator x:Name="ProgressIndicator"
+                                   IsRunning="False"
+                                   Color="{StaticResource PrimaryRed}"
+                                   WidthRequest="40"
+                                   HeightRequest="40" />
+                <Label x:Name="ProgressLabel"
+                       Text="Generating PDF..."
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}"
+                       HorizontalOptions="Center" />
+            </StackLayout>
+        </Frame>
+    </Grid>
+
+</ContentPage>

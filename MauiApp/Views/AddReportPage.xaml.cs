@@ -1,18 +1,20 @@
 using MauiApp.Core.Interfaces;
 using MauiApp.Core.Services;
+using MauiApp.Core.Models;
 
 namespace MauiApp.Views;
 
 public partial class AddReportPage : ContentPage
 {
     private readonly IBottomSheetService _bottomSheetService;
-    private List<string> _selectedImagePaths = new List<string>();
+    private readonly IReportImageService _reportImageService;
     private const int MaxImages = 10;
 
     public AddReportPage()
     {
         InitializeComponent();
         _bottomSheetService = ServiceHelper.GetService<IBottomSheetService>();
+        _reportImageService = ServiceHelper.GetService<IReportImageService>();
     }
 
     protected override async void OnAppearing()
@@ -69,7 +71,7 @@ public partial class AddReportPage : ContentPage
     {
         try
         {
-            if (_selectedImagePaths.Count >= MaxImages)
+            if (_reportImageService.ReportImages.Count >= MaxImages)
             {
                 await DisplayAlert("Limit Reached", $"You can only add up to {MaxImages} images.", "OK");
                 return;
@@ -148,14 +150,14 @@ public partial class AddReportPage : ContentPage
         ImagesGrid.Children.Clear();
         
         // Add images to grid (2 per row)
-        for (int i = 0; i < _selectedImagePaths.Count; i++)
+        for (int i = 0; i < _reportImageService.ReportImages.Count; i++)
         {
-            var imagePath = _selectedImagePaths[i];
+            var reportImage = _reportImageService.ReportImages[i];
             var row = i / 2;
             var column = i % 2;
             
             // Create the image frame
-            var imageFrame = CreateImageFrame(imagePath, i);
+            var imageFrame = CreateImageFrame(reportImage, i);
             
             // Add to grid
             Grid.SetRow(imageFrame, row);
@@ -164,10 +166,10 @@ public partial class AddReportPage : ContentPage
         }
         
         // Update button visibility
-        AddImageButton.IsVisible = _selectedImagePaths.Count < MaxImages;
+        AddImageButton.IsVisible = _reportImageService.ReportImages.Count < MaxImages;
     }
 
-    private Frame CreateImageFrame(string imagePath, int index)
+    private Frame CreateImageFrame(ReportImage reportImage, int index)
     {
         var frame = new Frame
         {
@@ -187,7 +189,7 @@ public partial class AddReportPage : ContentPage
         // Image
         var image = new Image
         {
-            Source = ImageSource.FromFile(imagePath),
+            Source = ImageSource.FromFile(reportImage.ImagePath),
             Aspect = Aspect.AspectFill,
             HorizontalOptions = LayoutOptions.Fill,
             VerticalOptions = LayoutOptions.Fill
@@ -210,7 +212,7 @@ public partial class AddReportPage : ContentPage
         };
 
         // Add click handler for delete
-        deleteButton.Clicked += (s, e) => OnRemoveImageClicked(s, e, imagePath);
+        deleteButton.Clicked += (s, e) => OnRemoveImageClicked(s, e, reportImage.Id);
 
         grid.Children.Add(image);
         grid.Children.Add(deleteButton);
@@ -219,9 +221,9 @@ public partial class AddReportPage : ContentPage
         return frame;
     }
 
-    private async void OnRemoveImageClicked(object sender, EventArgs e, string imagePath)
+    private async void OnRemoveImageClicked(object sender, EventArgs e, string imageId)
     {
-        _selectedImagePaths.Remove(imagePath);
+        _reportImageService.RemoveImage(imageId);
         await UpdateImagesCollection();
     }
 
@@ -235,17 +237,6 @@ public partial class AddReportPage : ContentPage
             };
 
             await Navigation.PushAsync(imageCropPage);
-
-            // Wait for the page to return and get the edited image path
-            imageCropPage.Disappearing += async (s, args) =>
-            {
-                if (!string.IsNullOrEmpty(imageCropPage.CroppedImagePath))
-                {
-                    // Add the edited image to the collection
-                    _selectedImagePaths.Add(imageCropPage.CroppedImagePath);
-                    await UpdateImagesCollection();
-                }
-            };
         }
         catch (Exception ex)
         {
@@ -283,14 +274,14 @@ public partial class AddReportPage : ContentPage
                 return;
             }
 
-            if (_selectedImagePaths.Count == 0)
+            if (_reportImageService.ReportImages.Count == 0)
             {
                 await DisplayAlert("Validation Error", "Please select at least one image for the report.", "OK");
                 return;
             }
 
             // TODO: Implement actual report generation logic here
-            await DisplayAlert("Success", $"Report generated successfully with {_selectedImagePaths.Count} image(s)!", "OK");
+            await DisplayAlert("Success", $"Report generated successfully with {_reportImageService.ReportImages.Count} image(s)!", "OK");
             await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)

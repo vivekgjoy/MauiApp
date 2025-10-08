@@ -3,217 +3,115 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="MauiApp.Views.ImageEditPage"
-             Title="Edit Image">
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Black}}"
+             Padding="0"
+             NavigationPage.HasNavigationBar="False"
+             NavigationPage.HasBackButton="False">
 
-    <Grid>
-        <!-- Background -->
-        <BoxView Background="{StaticResource PrimaryRed}" />
-        
-        <!-- Custom Header -->
-        <StackLayout VerticalOptions="Start" 
-                     Margin="0,60,0,0"
-                     Padding="20,10">
-            <Label Text="Edit Image"
-                   Style="{StaticResource TextH1}"
-                   TextColor="{StaticResource White}"
-                   HorizontalOptions="Center"
-                   FontSize="24"
-                   FontAttributes="Bold" />
-        </StackLayout>
-        
-        <!-- Main Content with Safe Area -->
-        <ScrollView Margin="0,120,0,0"
-                    Padding="20,0">
-            <StackLayout Spacing="20">
-                
-                <!-- Image Edit Container -->
-                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
-                       CornerRadius="12"
-                       Padding="0"
-                       HasShadow="True">
-                    <Grid HeightRequest="400">
-                        
-                        <!-- Image Display -->
-                        <Image x:Name="EditImage"
-                               Aspect="AspectFit"
-                               BackgroundColor="LightGray" />
-                    </Grid>
-                </Frame>
-                
-                <!-- Drawing Tools -->
-                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
-                       CornerRadius="12"
-                       Padding="15"
-                       HasShadow="True">
-                    <StackLayout Spacing="15">
-                        
-                        <!-- Brush Size and Color -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
-                            <StackLayout Grid.Column="0">
-                                <Label Text="Brush Size" 
-                                       Style="{StaticResource TextBody}"
-                                       FontSize="14" />
-                                <Slider x:Name="BrushSizeSlider"
-                                        Minimum="1"
-                                        Maximum="20"
-                                        Value="5"
-                                        ValueChanged="OnBrushSizeChanged" />
-                                <Label x:Name="BrushSizeLabel"
-                                       Text="5px"
-                                       Style="{StaticResource TextBody}"
-                                       FontSize="12"
-                                       HorizontalOptions="Center" />
-                            </StackLayout>
-                            
-                            <StackLayout Grid.Column="1">
-                                <Label Text="Color" 
-                                       Style="{StaticResource TextBody}"
-                                       FontSize="14" />
-                                <Grid ColumnDefinitions="*,*,*,*" 
-                                      ColumnSpacing="10"
-                                      Margin="0,5,0,0">
-                                    <Button Grid.Column="0"
-                                            x:Name="RedColorButton"
-                                            BackgroundColor="Red"
-                                            Text=""
-                                            CornerRadius="15"
-                                            WidthRequest="30"
-                                            HeightRequest="30"
-                                            Clicked="OnColorButtonClicked" />
-                                    <Button Grid.Column="1"
-                                            x:Name="BlueColorButton"
-                                            BackgroundColor="Blue"
-                                            Text=""
-                                            CornerRadius="15"
-                                            WidthRequest="30"
-                                            HeightRequest="30"
-                                            Clicked="OnColorButtonClicked" />
-                                    <Button Grid.Column="2"
-                                            x:Name="GreenColorButton"
-                                            BackgroundColor="Green"
-                                            Text=""
-                                            CornerRadius="15"
-                                            WidthRequest="30"
-                                            HeightRequest="30"
-                                            Clicked="OnColorButtonClicked" />
-                                    <Button Grid.Column="3"
-                                            x:Name="BlackColorButton"
-                                            BackgroundColor="Black"
-                                            Text=""
-                                            CornerRadius="15"
-                                            WidthRequest="30"
-                                            HeightRequest="30"
-                                            Clicked="OnColorButtonClicked" />
-                                </Grid>
-                            </StackLayout>
-                        </Grid>
-                        
-                        <!-- Drawing Tools -->
-                        <Grid ColumnDefinitions="*,*,*,*" 
-                              ColumnSpacing="10">
-                            <Button Grid.Column="0"
-                                    x:Name="BrushToolButton"
-                                    Text="✏️"
-                                    BackgroundColor="{StaticResource PrimaryRed}"
-                                    TextColor="{StaticResource White}"
-                                    CornerRadius="8"
-                                    Clicked="OnToolSelected" />
-                            <Button Grid.Column="1"
-                                    x:Name="EraserToolButton"
-                                    Text="🧽"
-                                    BackgroundColor="Transparent"
-                                    TextColor="{StaticResource PrimaryRed}"
-                                    CornerRadius="8"
-                                    Clicked="OnToolSelected" />
-                            <Button Grid.Column="2"
-                                    x:Name="UndoButton"
-                                    Text="↶"
-                                    BackgroundColor="Transparent"
-                                    TextColor="{StaticResource PrimaryRed}"
-                                    CornerRadius="8"
-                                    Clicked="OnUndoClicked" />
-                            <Button Grid.Column="3"
-                                    x:Name="RedoButton"
-                                    Text="↷"
-                                    BackgroundColor="Transparent"
-                                    TextColor="{StaticResource PrimaryRed}"
-                                    CornerRadius="8"
-                                    Clicked="OnRedoClicked" />
-                        </Grid>
-                        
-                        <!-- Symbols -->
-                        <StackLayout>
-                            <Label Text="Symbols" 
-                                   Style="{StaticResource TextBody}"
-                                   FontSize="14" />
-                            <Grid ColumnDefinitions="*,*,*,*,*" 
-                                  ColumnSpacing="10"
-                                  Margin="0,5,0,0">
-                                <Button Grid.Column="0"
-                                        x:Name="ArrowSymbolButton"
-                                        Text="→"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource PrimaryRed}"
-                                        CornerRadius="8"
-                                        Clicked="OnSymbolSelected" />
-                                <Button Grid.Column="1"
-                                        x:Name="CheckSymbolButton"
-                                        Text="✓"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource PrimaryRed}"
-                                        CornerRadius="8"
-                                        Clicked="OnSymbolSelected" />
-                                <Button Grid.Column="2"
-                                        x:Name="CrossSymbolButton"
-                                        Text="✗"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource PrimaryRed}"
-                                        CornerRadius="8"
-                                        Clicked="OnSymbolSelected" />
-                                <Button Grid.Column="3"
-                                        x:Name="CircleSymbolButton"
-                                        Text="○"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource PrimaryRed}"
-                                        CornerRadius="8"
-                                        Clicked="OnSymbolSelected" />
-                                <Button Grid.Column="4"
-                                        x:Name="SquareSymbolButton"
-                                        Text="□"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource PrimaryRed}"
-                                        CornerRadius="8"
-                                        Clicked="OnSymbolSelected" />
-                            </Grid>
-                        </StackLayout>
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+
+        <!-- Top Bar -->
+        <Grid Grid.Row="0"
+              BackgroundColor="{StaticResource PrimaryRed}"
+              HeightRequest="70"
+              Padding="12,40,12,12"
+              HorizontalOptions="FillAndExpand"
+              VerticalOptions="Start">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ImageButton Source="ic_back.png"
+                         BackgroundColor="Transparent"
+                         WidthRequest="28"
+                         HeightRequest="28"
+                         Clicked="OnBackClicked" />
+
+            <Label Grid.Column="1"
+                   Text="Edit Image"
+                   TextColor="White"
+                   FontSize="18"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center" />
+
+            <BoxView Grid.Column="2" WidthRequest="28" HeightRequest="28" BackgroundColor="Transparent"/>
+        </Grid>
+
+        <!-- Canvas -->
+        <Grid Grid.Row="1"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
+            <Image x:Name="EditImage"
+                   Aspect="AspectFit"
+                   VerticalOptions="FillAndExpand"
+                   HorizontalOptions="FillAndExpand"/>
+            <skia:SKCanvasView x:Name="CanvasView"
+                               PaintSurface="OnCanvasViewPaintSurface"
+                               EnableTouchEvents="True"
+                               Touch="OnTouchEffectAction"
+                               VerticalOptions="FillAndExpand"
+                               HorizontalOptions="FillAndExpand"/>
+        </Grid>
+
+        <!-- Bottom Tools -->
+        <Grid Grid.Row="2" Padding="12" RowSpacing="8">
+            <StackLayout Spacing="8">
+
+                <!-- Brush Size + Colors -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <StackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Brush Size" FontAttributes="Bold" FontSize="13"/>
+                        <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="60" Value="5" ValueChanged="OnBrushSizeChanged" />
+                        <Label x:Name="BrushSizeLabel" Text="5px" FontSize="12" HorizontalOptions="Center"/>
                     </StackLayout>
-                </Frame>
-                
-                <!-- Instructions -->
-                <Label Text="Draw on the image using the tools below"
-                       Style="{StaticResource TextBody}"
-                       HorizontalOptions="Center"
-                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
-                
-                <!-- Action Buttons -->
-                <Grid ColumnDefinitions="*,*" 
-                      ColumnSpacing="15"
-                      Margin="0,20,0,0">
-                    
-                    <!-- Back Button -->
-                    <Button Grid.Column="0"
-                            Text="Back"
-                            Style="{StaticResource SecondaryButton}"
-                            Clicked="OnBackClicked" />
-                    
-                    <!-- Save Button -->
-                    <Button Grid.Column="1"
-                            Text="Save Image"
-                            Style="{StaticResource PrimaryButton}"
-                            Clicked="OnSaveClicked" />
+
+                    <StackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Color" FontAttributes="Bold" FontSize="13"/>
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,4,0,0">
+                            <Button x:Name="RedColorButton" Grid.Column="0" BackgroundColor="Red" CornerRadius="18"
+                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                            <Button x:Name="BlueColorButton" Grid.Column="1" BackgroundColor="Blue" CornerRadius="18"
+                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                            <Button x:Name="GreenColorButton" Grid.Column="2" BackgroundColor="Green" CornerRadius="18"
+                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                            <Button x:Name="BlackColorButton" Grid.Column="3" BackgroundColor="Black" CornerRadius="18"
+                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                        </Grid>
+                    </StackLayout>
                 </Grid>
-                
+
+                <!-- Tools: Brush/Eraser + Undo/Redo -->
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
+                    <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
+                            BackgroundColor="{StaticResource PrimaryRed}" TextColor="White" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <BoxView Grid.Column="2"/>
+                    <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                </Grid>
+
+                <!-- Symbols row -->
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+                    <Button x:Name="ArrowToolButton" Grid.Column="0" Text="➡️" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="CircleToolButton" Grid.Column="1" Text="⭕" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="SquareToolButton" Grid.Column="2" Text="⬜" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="CheckToolButton" Grid.Column="3" Text="✅" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                    <Button x:Name="CrossToolButton" Grid.Column="4" Text="❌" Clicked="OnToolSelected"
+                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
+                </Grid>
+
+                <Button Text="Save Image" Clicked="OnSaveClicked" Style="{StaticResource PrimaryButton}" />
             </StackLayout>
-        </ScrollView>
+        </Grid>
     </Grid>
 </ContentPage>
