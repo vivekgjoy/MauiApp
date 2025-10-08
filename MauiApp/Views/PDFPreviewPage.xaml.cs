@@ -2,8 +2,6 @@ using MauiApp.Core.Interfaces;
 using MauiApp.Core.Services;
 using MauiApp.Core.Models;
 using Microsoft.Maui.Platform;
-using System.Collections.ObjectModel;
-using System.Windows.Input;
 #if ANDROID
 using AndroidX.AppCompat.App;
 using Android.OS;
@@ -17,35 +15,46 @@ public partial class PDFPreviewPage : ContentPage
     private readonly IReportImageService _reportImageService;
     private readonly IPDFGeneratorService _pdfGeneratorService;
     private readonly IReportStorageService _reportStorageService;
-    private int _imagesPerPage = 4;
+    private int _imagesPerPage = 2;
     private List<ReportImage> _images = new();
 
     public PDFPreviewPage()
     {
         try
         {
-            InitializeComponent();
-            
-            // Simple test first
             System.Diagnostics.Debug.WriteLine("PDFPreviewPage constructor started");
             
+            InitializeComponent();
+            System.Diagnostics.Debug.WriteLine("InitializeComponent completed");
+            
+            // Initialize services
             _reportImageService = ServiceHelper.GetService<IReportImageService>();
             _pdfGeneratorService = ServiceHelper.GetService<IPDFGeneratorService>();
             _reportStorageService = ServiceHelper.GetService<IReportStorageService>();
 
-            System.Diagnostics.Debug.WriteLine("Services initialized");
-
-            // Set up back navigation
-            // NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
+            System.Diagnostics.Debug.WriteLine("All services initialized successfully");
 
             // Handle safe area for status bar
             this.Loaded += OnPageLoaded;
 
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage constructor completed");
+            System.Diagnostics.Debug.WriteLine("PDFPreviewPage constructor completed successfully");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error in PDFPreviewPage constructor: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Critical error in PDFPreviewPage constructor: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            
+            // Show error on page
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                Content = new Label
+                {
+                    Text = $"Error loading page: {ex.Message}",
+                    TextColor = Colors.Red,
+                    HorizontalOptions = LayoutOptions.Center,
+                    VerticalOptions = LayoutOptions.Center
+                };
+            });
         }
     }
 
@@ -56,23 +65,20 @@ public partial class PDFPreviewPage : ContentPage
             base.OnAppearing();
             System.Diagnostics.Debug.WriteLine("PDFPreviewPage OnAppearing started");
             
-            // Update test label
-            TestLabel.Text = "Page loaded successfully!";
-            TestLabel.TextColor = Colors.Green;
+            // Initialize the page
+            ImagesPerPageLabel.Text = _imagesPerPage.ToString();
             
-            // Add a small delay to ensure the service is ready
-            await Task.Delay(500);
-            
+            // Load and display images
             LoadImages();
             UpdatePreview();
             
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage OnAppearing completed");
+            System.Diagnostics.Debug.WriteLine("PDFPreviewPage OnAppearing completed successfully");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error in OnAppearing: {ex.Message}");
-            TestLabel.Text = $"Error: {ex.Message}";
-            TestLabel.TextColor = Colors.Red;
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            await DisplayAlert("Error", $"Failed to load preview: {ex.Message}", "OK");
         }
     }
 
@@ -101,20 +107,12 @@ public partial class PDFPreviewPage : ContentPage
     {
         try
         {
-            if (_reportImageService == null)
-            {
-                System.Diagnostics.Debug.WriteLine("ReportImageService is null!");
-                _images = new List<ReportImage>();
-                TotalImagesLabel.Text = "Service Error";
-                return;
-            }
+            System.Diagnostics.Debug.WriteLine("LoadImages method started");
             
             _images = _reportImageService.ReportImages.ToList();
-            TotalImagesLabel.Text = _images.Count.ToString();
+            TotalImagesLabel.Text = $"Total Images: {_images.Count}";
             
-            // Debug logging
-            System.Diagnostics.Debug.WriteLine($"PDFPreviewPage: Loaded {_images.Count} images from service");
-            System.Diagnostics.Debug.WriteLine($"Service instance hash: {_reportImageService.GetHashCode()}");
+            System.Diagnostics.Debug.WriteLine($"Loaded {_images.Count} images from service");
             foreach (var img in _images)
             {
                 System.Diagnostics.Debug.WriteLine($"Image: {img.ImagePath}, Comment: {img.Comment}, ID: {img.Id}");
@@ -124,7 +122,7 @@ public partial class PDFPreviewPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"Error loading images: {ex.Message}");
             _images = new List<ReportImage>();
-            TotalImagesLabel.Text = "Error: " + ex.Message;
+            TotalImagesLabel.Text = "Error loading images";
         }
     }
 
@@ -153,36 +151,35 @@ public partial class PDFPreviewPage : ContentPage
         try
         {
             PreviewContainer.Children.Clear();
-
             System.Diagnostics.Debug.WriteLine($"UpdatePreview called - Images count: {_images.Count}");
 
             if (_images.Count == 0)
             {
+                var noImagesFrame = new Frame
+                {
+                    BackgroundColor = Colors.White,
+                    CornerRadius = 8,
+                    Padding = 20,
+                    HasShadow = true
+                };
+
                 var noImagesLabel = new Label
                 {
-                    Text = "No images found. Please add images in the previous page.",
+                    Text = "No images found.\nPlease add images in the previous page.",
                     FontSize = 16,
-                    TextColor = Colors.Red,
+                    TextColor = Colors.Gray,
                     HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalTextAlignment = TextAlignment.Center
                 };
-                PreviewContainer.Children.Add(noImagesLabel);
-                
-                // Add debug info
-                var debugLabel = new Label
-                {
-                    Text = $"Debug: Service null? {_reportImageService == null}, Images in service: {_reportImageService?.ReportImages?.Count ?? -1}",
-                    FontSize = 12,
-                    TextColor = Colors.Red,
-                    HorizontalOptions = LayoutOptions.Center
-                };
-                PreviewContainer.Children.Add(debugLabel);
-                
-                System.Diagnostics.Debug.WriteLine("No images found - showing empty state");
+
+                noImagesFrame.Content = noImagesLabel;
+                PreviewContainer.Children.Add(noImagesFrame);
                 return;
             }
 
             var totalPages = (int)Math.Ceiling((double)_images.Count / _imagesPerPage);
+            System.Diagnostics.Debug.WriteLine($"Creating {totalPages} pages with {_imagesPerPage} images per page");
 
             for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
             {
@@ -194,6 +191,14 @@ public partial class PDFPreviewPage : ContentPage
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error in UpdatePreview: {ex.Message}");
+            var errorFrame = new Frame
+            {
+                BackgroundColor = Colors.White,
+                CornerRadius = 8,
+                Padding = 20,
+                HasShadow = true
+            };
+
             var errorLabel = new Label
             {
                 Text = $"Error: {ex.Message}",
@@ -201,83 +206,111 @@ public partial class PDFPreviewPage : ContentPage
                 TextColor = Colors.Red,
                 HorizontalOptions = LayoutOptions.Center
             };
-            PreviewContainer.Children.Add(errorLabel);
+
+            errorFrame.Content = errorLabel;
+            PreviewContainer.Children.Add(errorFrame);
         }
     }
 
     private Frame CreatePagePreview(int pageNumber, List<ReportImage> images)
     {
+        // Main page frame with A4-like proportions
         var pageFrame = new Frame
         {
             BackgroundColor = Colors.White,
             BorderColor = Colors.LightGray,
             CornerRadius = 8,
-            Padding = 20,
+            Padding = 0,
             HasShadow = true,
-            Margin = new Thickness(0, 0, 0, 20)
+            Margin = new Thickness(0, 0, 0, 20),
+            HeightRequest = 400 // Fixed height for consistent preview
         };
 
+        // Page container with margins (simulating printable area)
         var pageContainer = new Grid
         {
+            Padding = new Thickness(20, 30, 20, 30), // Top, bottom, left, right margins
             RowDefinitions = new RowDefinitionCollection
             {
                 new RowDefinition { Height = GridLength.Auto }, // Page header
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) } // Images grid
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }, // Images area
+                new RowDefinition { Height = GridLength.Auto } // Page footer
             }
         };
 
-        // Page header
+        // Page header with margin guidelines
+        var headerFrame = new Frame
+        {
+            BackgroundColor = Colors.LightGray,
+            CornerRadius = 4,
+            Padding = new Thickness(10, 5),
+            HasShadow = false
+        };
+
         var pageHeader = new Label
         {
             Text = $"Page {pageNumber}",
             FontSize = 14,
             FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.Gray,
-            HorizontalOptions = LayoutOptions.Center,
-            Margin = new Thickness(0, 0, 0, 10)
+            TextColor = Colors.DarkGray,
+            HorizontalOptions = LayoutOptions.Center
         };
-        pageContainer.Add(pageHeader, 0, 0);
 
-        // Images grid
-        var imagesGrid = CreateImagesGrid(images);
-        pageContainer.Add(imagesGrid, 0, 1);
+        headerFrame.Content = pageHeader;
+        pageContainer.Add(headerFrame, 0, 0);
+
+        // Images area with margin guidelines
+        var imagesArea = CreateImagesArea(images);
+        pageContainer.Add(imagesArea, 0, 1);
+
+        // Page footer with margin guidelines
+        var footerFrame = new Frame
+        {
+            BackgroundColor = Colors.LightGray,
+            CornerRadius = 4,
+            Padding = new Thickness(10, 5),
+            HasShadow = false
+        };
+
+        var pageFooter = new Label
+        {
+            Text = $"Images: {images.Count}",
+            FontSize = 12,
+            TextColor = Colors.DarkGray,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
+        footerFrame.Content = pageFooter;
+        pageContainer.Add(footerFrame, 0, 2);
 
         pageFrame.Content = pageContainer;
         return pageFrame;
     }
 
-    private Grid CreateImagesGrid(List<ReportImage> images)
+    private Grid CreateImagesArea(List<ReportImage> images)
     {
-        var (cols, rows) = CalculateGridDimensions(images.Count);
-        
         var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitionCollection(),
-            RowDefinitions = new RowDefinitionCollection()
+            ColumnDefinitions = new ColumnDefinitionCollection
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(10) }, // Spacing between images
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+            },
+            RowDefinitions = new RowDefinitionCollection
+            {
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            }
         };
 
-        // Create columns
-        for (int i = 0; i < cols; i++)
-        {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        }
-
-        // Create rows
-        for (int i = 0; i < rows; i++)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        }
-
-        // Add images to grid
-        for (int i = 0; i < images.Count; i++)
+        // Add images to grid (2 images per page)
+        for (int i = 0; i < images.Count && i < 2; i++)
         {
             var image = images[i];
             var imageFrame = CreateImageFrame(image);
             
-            var row = i / cols;
-            var col = i % cols;
-            
-            grid.Add(imageFrame, col, row);
+            var col = i * 2; // 0 or 2 (skipping the middle spacing column)
+            grid.Add(imageFrame, col, 0);
         }
 
         return grid;
@@ -287,23 +320,26 @@ public partial class PDFPreviewPage : ContentPage
     {
         var imageFrame = new Frame
         {
-            BackgroundColor = Colors.LightGray,
+            BackgroundColor = Colors.White,
+            BorderColor = Colors.LightGray,
             CornerRadius = 4,
-            Padding = 5,
-            HasShadow = false,
+            Padding = 8,
+            HasShadow = true,
             Margin = new Thickness(2)
         };
 
         var imageContainer = new StackLayout
         {
-            Spacing = 5
+            Spacing = 8
         };
 
+        // Image with proper aspect ratio
         var image = new Image
         {
             Source = ImageSource.FromFile(reportImage.ImagePath),
             Aspect = Aspect.AspectFit,
-            BackgroundColor = Colors.White
+            BackgroundColor = Colors.LightGray,
+            HeightRequest = 150 // Fixed height for consistent preview
         };
 
         imageContainer.Children.Add(image);
@@ -314,11 +350,12 @@ public partial class PDFPreviewPage : ContentPage
             var commentLabel = new Label
             {
                 Text = reportImage.Comment,
-                FontSize = 10,
-                TextColor = Colors.Gray,
+                FontSize = 12,
+                TextColor = Colors.DarkGray,
                 MaxLines = 2,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                HorizontalOptions = LayoutOptions.Center
+                HorizontalOptions = LayoutOptions.Center,
+                HorizontalTextAlignment = TextAlignment.Center
             };
             imageContainer.Children.Add(commentLabel);
         }
@@ -327,12 +364,6 @@ public partial class PDFPreviewPage : ContentPage
         return imageFrame;
     }
 
-    private (int cols, int rows) CalculateGridDimensions(int imageCount)
-    {
-        var cols = (int)Math.Ceiling(Math.Sqrt(imageCount));
-        var rows = (int)Math.Ceiling((double)imageCount / cols);
-        return (cols, rows);
-    }
 
     private async void OnGeneratePDFClicked(object sender, EventArgs e)
     {
@@ -344,7 +375,7 @@ public partial class PDFPreviewPage : ContentPage
 
         try
         {
-            ShowProgress(true, "Generating PDF...");
+            ShowProgress(true, "Publishing PDF...");
             
             // Log PDF generation start
             System.Diagnostics.Debug.WriteLine($"PDF Generation Started - Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}");
@@ -360,7 +391,10 @@ public partial class PDFPreviewPage : ContentPage
                 
                 // Log successful PDF generation
                 System.Diagnostics.Debug.WriteLine($"PDF Generation Success - Path: {savedPath}, Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}");
-                await DisplayAlert("Success", $"PDF generated successfully!\nSaved to Reports History", "OK");
+                await DisplayAlert("Success", $"PDF published successfully!\nYour report has been saved and is available in Reports History.", "OK");
+                
+                // Navigate back to main page
+                await Shell.Current.GoToAsync("//MainPage");
             }
             else
             {

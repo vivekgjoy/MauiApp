@@ -54,8 +54,9 @@
                                         Style="{StaticResource SecondaryButton}"
                                         Clicked="OnAddReportsClicked" />
                                 <Button Grid.Row="0" Grid.Column="1" 
-                                        Text="Analytics" 
-                                        Style="{StaticResource SecondaryButton}" />
+                                        Text="Reports" 
+                                        Style="{StaticResource SecondaryButton}"
+                                        Clicked="OnReportsClicked" />
                                 <Button Grid.Row="1" Grid.Column="0" 
                                         Text="Settings" 
                                         Style="{StaticResource SecondaryButton}" />

@@ -47,4 +47,34 @@
         ContentTemplate="{DataTemplate views:ImageCropPage}"
         Route="ImageCropPage" />
 
+    <!-- PDF Preview Page Route -->
+    <ShellContent
+        Title="PDF Preview"
+        ContentTemplate="{DataTemplate views:PDFPreviewPage}"
+        Route="PDFPreviewPage" />
+
+    <!-- Image Comment Page Route -->
+    <ShellContent
+        Title="Image Comment"
+        ContentTemplate="{DataTemplate views:ImageCommentPage}"
+        Route="ImageCommentPage" />
+
+    <!-- Image Edit Page Route -->
+    <ShellContent
+        Title="Image Edit"
+        ContentTemplate="{DataTemplate views:ImageEditPage}"
+        Route="ImageEditPage" />
+
+    <!-- Image Source Selection Page Route -->
+    <ShellContent
+        Title="Image Source"
+        ContentTemplate="{DataTemplate views:ImageSourceSelectionPage}"
+        Route="ImageSourceSelectionPage" />
+
+    <!-- Reports History Page Route -->
+    <ShellContent
+        Title="Reports History"
+        ContentTemplate="{DataTemplate views:ReportsHistoryPage}"
+        Route="ReportsHistoryPage" />
+
 </Shell>

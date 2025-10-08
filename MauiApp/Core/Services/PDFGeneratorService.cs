@@ -193,6 +193,13 @@ public class PDFGeneratorService : IPDFGeneratorService
 
     private (int cols, int rows) CalculateGridDimensions(int imageCount)
     {
+        // For 2 images per page, use 2 columns
+        if (imageCount == 2)
+        {
+            return (2, 1);
+        }
+        
+        // For other cases, calculate based on square root
         var cols = (int)Math.Ceiling(Math.Sqrt(imageCount));
         var rows = (int)Math.Ceiling((double)imageCount / cols);
         return (cols, rows);

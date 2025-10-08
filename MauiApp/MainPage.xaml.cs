@@ -25,6 +25,18 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private async void OnReportsClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("//ReportsHistoryPage");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to navigate to Reports: {ex.Message}", "OK");
+        }
+    }
+
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
         try

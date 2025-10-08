@@ -280,13 +280,86 @@ public partial class AddReportPage : ContentPage
                 return;
             }
 
-            // TODO: Implement actual report generation logic here
-            await DisplayAlert("Success", $"Report generated successfully with {_reportImageService.ReportImages.Count} image(s)!", "OK");
-            await Shell.Current.GoToAsync("..");
+            // Show progress loader
+            await ShowProgressLoader("Preparing report preview...");
+
+            // Navigate to PDF preview page
+            await Shell.Current.GoToAsync("//PDFPreviewPage");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to generate report: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Failed to prepare report: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task ShowProgressLoader(string message)
+    {
+        // Create a progress overlay
+        var progressOverlay = new Grid
+        {
+            BackgroundColor = Color.FromArgb("#80000000"), // Semi-transparent black
+            HorizontalOptions = LayoutOptions.Fill,
+            VerticalOptions = LayoutOptions.Fill
+        };
+
+        var progressFrame = new Frame
+        {
+            BackgroundColor = Color.FromArgb("#2D2D2D"),
+            CornerRadius = 12,
+            Padding = new Thickness(30),
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center,
+            HasShadow = true
+        };
+
+        var progressStack = new StackLayout
+        {
+            Spacing = 20,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
+        var activityIndicator = new ActivityIndicator
+        {
+            IsRunning = true,
+            Color = Color.FromArgb("#E50000"),
+            WidthRequest = 40,
+            HeightRequest = 40
+        };
+
+        var progressLabel = new Label
+        {
+            Text = message,
+            FontSize = 16,
+            TextColor = Colors.White,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
+        progressStack.Children.Add(activityIndicator);
+        progressStack.Children.Add(progressLabel);
+        progressFrame.Content = progressStack;
+        progressOverlay.Children.Add(progressFrame);
+
+        // Add overlay to the page
+        if (Content is Grid mainGrid)
+        {
+            mainGrid.Children.Add(progressOverlay);
+        }
+        else
+        {
+            // If content is not a Grid, wrap it
+            var wrapperGrid = new Grid();
+            wrapperGrid.Children.Add(Content);
+            wrapperGrid.Children.Add(progressOverlay);
+            Content = wrapperGrid;
+        }
+
+        // Show progress for a short time
+        await Task.Delay(1500);
+
+        // Remove overlay
+        if (Content is Grid grid && grid.Children.Contains(progressOverlay))
+        {
+            grid.Children.Remove(progressOverlay);
         }
     }
 }
