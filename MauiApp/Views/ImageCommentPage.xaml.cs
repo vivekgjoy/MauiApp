@@ -47,7 +47,7 @@ public partial class ImageCommentPage : ContentPage
         _reportImageService = ServiceHelper.GetService<IReportImageService>();
         
         // Set up navigation bar back command
-        NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
+        //NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
         
         // Handle safe area for status bar
         this.Loaded += OnPageLoaded;

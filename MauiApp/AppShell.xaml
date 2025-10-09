@@ -6,16 +6,26 @@
     xmlns:local="clr-namespace:MauiApp"
     xmlns:views="clr-namespace:MauiApp.Views"
     Title="SmartERP"
-    FlyoutBehavior="Disabled">
-    
+    FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False"
+    BackgroundColor="Transparent">
+
     <Shell.Resources>
+        <!-- Base Style for Shell Items -->
         <Style x:Key="BaseShellItemStyle" TargetType="ShellItem">
-            <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryRed}" />
+            <!-- Make background transparent so gradient in pages shows -->
+            <Setter Property="Shell.BackgroundColor" Value="Transparent" />
             <Setter Property="Shell.ForegroundColor" Value="{StaticResource White}" />
             <Setter Property="Shell.TitleColor" Value="{StaticResource White}" />
         </Style>
+
+        <!-- Apply globally -->
+        <Style TargetType="Shell">
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="Shell.NavBarIsVisible" Value="False" />
+        </Style>
     </Shell.Resources>
-    
 
     <!-- Splash Screen Route -->
     <ShellContent

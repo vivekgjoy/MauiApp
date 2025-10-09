@@ -26,7 +26,7 @@ public partial class ReportsHistoryPage : ContentPage
         _reports = new ObservableCollection<GeneratedReport>();
 
         // Set up navigation bar back command
-        NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
+        //NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
 
         // Set binding context
         BindingContext = this;
@@ -41,6 +41,16 @@ public partial class ReportsHistoryPage : ContentPage
         await LoadReports();
     }
 
+    protected override bool OnBackButtonPressed()
+    {
+        // Handle back button press - navigate back instead of going to background
+        Device.BeginInvokeOnMainThread(async () =>
+        {
+            await OnBackClicked();
+        });
+        return true; // Prevent default back behavior (going to background)
+    }
+
 #if ANDROID
     private void OnPageLoaded(object sender, EventArgs e)
     {
@@ -49,7 +59,7 @@ public partial class ReportsHistoryPage : ContentPage
             var activity = Platform.CurrentActivity as AppCompatActivity;
             if (activity != null && Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {
-                activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
+                activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
             }
         }
     }
@@ -139,15 +149,20 @@ public partial class ReportsHistoryPage : ContentPage
         }
     }
 
+    private async void OnBackButtonClicked(object sender, EventArgs e)
+    {
+        await Navigation.PopAsync();
+    }
+
     private async void OnGenerateNewReportClicked(object sender, EventArgs e)
     {
         try
         {
-            await Navigation.PopAsync();
+            await Navigation.PushAsync(new AddReportPage());
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to navigate back: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Failed to navigate to Add Report page: {ex.Message}", "OK");
         }
     }
 }

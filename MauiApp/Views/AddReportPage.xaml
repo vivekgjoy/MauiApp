@@ -8,53 +8,44 @@
 
     <Grid>
 
+        <!-- 🔸 Background Gradient -->
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF6B5A" Offset="0.0" />
-                    <!-- Top coral -->
-                    <GradientStop Color="#F58C6B" Offset="1.0" />
-                    <!-- Bottom soft orange -->
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
 
-        <!-- 🧭 Custom Navigation Header -->
+        <!-- 🔹 Custom Header -->
         <Grid x:Name="CustomNavHeader"
               HeightRequest="120"
               VerticalOptions="Start"
-              HorizontalOptions="FillAndExpand"
-              Margin="0">
+              HorizontalOptions="FillAndExpand">
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
-                <!-- Status bar space -->
-                <RowDefinition Height="56" />
-                <!-- Navigation bar -->
-                <RowDefinition Height="24" />
-                <!-- Spacer -->
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
 
-            <!-- Navigation Bar Content -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Back Button -->
                 <ImageButton Grid.Column="0"
-             Source="ic_arrow_back.svg"
-                    BackgroundColor="Transparent"
-             WidthRequest="28"
-             HeightRequest="28"
-             HorizontalOptions="Start"
-             VerticalOptions="Center"
-             Clicked="OnBackClicked" />
+                             Source="ic_arrow_back.svg"
+                             BackgroundColor="Transparent"
+                             WidthRequest="28"
+                             HeightRequest="28"
+                             HorizontalOptions="Start"
+                             VerticalOptions="Center"
+                             Clicked="OnBackClicked"/>
 
-
-                    <!-- Title Centered -->
                 <Label Grid.Column="1"
                        Text="Add New Report"
                        FontSize="18"
@@ -62,27 +53,27 @@
                        TextColor="White"
                        HorizontalOptions="Center"
                        VerticalOptions="Center"
-                       HorizontalTextAlignment="Center" />
-
-                <Label Grid.Column="2" Text="" />
+                       HorizontalTextAlignment="Center"/>
             </Grid>
         </Grid>
 
         <!-- 🧾 Main Content -->
-        <ScrollView Margin="0,120,0,0">
+        <ScrollView Margin="0,110,0,0">
             <StackLayout Spacing="0" Padding="0">
 
-                <!-- Report Form Card -->
-                <Frame BackgroundColor="{StaticResource Gray800}"
-                       CornerRadius="12"
-                       Margin="16,16,16,0"
+                <!-- ✨ White Report Card -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="16"
+                       Margin="16,0,16,16"
                        Padding="20"
                        HasShadow="True">
+
                     <StackLayout Spacing="20">
+
                         <Label Text="Report Details"
                                FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource White}"
+                               TextColor="Black"
                                HorizontalOptions="Center" />
 
                         <!-- Report Title -->
@@ -90,17 +81,17 @@
                             <Label Text="Report Title"
                                    FontSize="14"
                                    FontAttributes="Bold"
-                                   TextColor="{StaticResource White}" />
-                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}"
-                                   BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}"
+                                   TextColor="Black"/>
+                            <Frame BackgroundColor="White"
+                                   BorderColor="{StaticResource TopCoral}"
                                    CornerRadius="8"
                                    Padding="12,0"
                                    HasShadow="False">
                                 <Entry x:Name="TitleEntry"
                                        Placeholder="Enter report title"
-                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                       TextColor="Black"
                                        BackgroundColor="Transparent"
-                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       PlaceholderColor="#666666"
                                        FontSize="14"
                                        HeightRequest="44"
                                        Style="{StaticResource NoUnderlineEntry}" />
@@ -112,82 +103,74 @@
                             <Label Text="Description"
                                    FontSize="14"
                                    FontAttributes="Bold"
-                                   TextColor="{StaticResource White}" />
-                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}"
-                                   BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}"
+                                   TextColor="Black"/>
+                            <Frame BackgroundColor="White"
+                                   BorderColor="{StaticResource TopCoral}"
                                    CornerRadius="8"
                                    Padding="12,8"
                                    HasShadow="False">
                                 <Editor x:Name="DescriptionEditor"
                                         Placeholder="Enter report description"
                                         HeightRequest="100"
-                                        TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                        TextColor="Black"
                                         BackgroundColor="Transparent"
-                                        PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                        PlaceholderColor="#666666"
                                         FontSize="14"
                                         AutoSize="TextChanges"
                                         Style="{StaticResource NoUnderline}" />
                             </Frame>
                         </StackLayout>
 
-                        <!-- Attachments Section -->
+                        <!-- Attachments -->
                         <StackLayout Spacing="8">
                             <Label Text="ATTACHMENTS"
                                    FontSize="14"
                                    FontAttributes="Bold"
-                                   TextColor="{StaticResource White}" />
+                                   TextColor="Black"/>
 
                             <Grid x:Name="ImagesGrid" BackgroundColor="Transparent">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                             </Grid>
 
                             <Button x:Name="AddImageButton"
                                     Text="+ Add Image"
-                                    BackgroundColor="{StaticResource Gray600}"
-                                    TextColor="{StaticResource White}"
+                                    BackgroundColor="{StaticResource TopCoral}"
+                                    TextColor="White"
                                     FontSize="14"
                                     FontAttributes="Bold"
                                     HeightRequest="44"
                                     Clicked="OnAddImageClicked" />
-
-                            <Label x:Name="ImagePathLabel"
-                                   FontSize="12"
-                                   TextColor="{StaticResource Gray400}"
-                                   IsVisible="False" />
                         </StackLayout>
 
-                        <!-- Action Buttons -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,20,0,0">
+                        <!-- Buttons -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
                             <Button Grid.Column="0"
                                     Text="Cancel"
-                                    BackgroundColor="{StaticResource Gray600}"
-                                    TextColor="{StaticResource White}"
+                                    BackgroundColor="#E0E0E0"
+                                    TextColor="Black"
                                     FontSize="14"
                                     FontAttributes="Bold"
                                     HeightRequest="44"
-                                    Clicked="OnCancelClicked" />
+                                    Clicked="OnCancelClicked"/>
+
                             <Button Grid.Column="1"
                                     Text="Generate Report"
-                                    BackgroundColor="#FF6B5A"
-                                    TextColor="{StaticResource White}"
+                                    BackgroundColor="{StaticResource TopCoral}"
+                                    TextColor="White"
                                     FontSize="14"
                                     FontAttributes="Bold"
                                     HeightRequest="44"
-                                    Clicked="OnGenerateReportClicked" />
+                                    Clicked="OnGenerateReportClicked"/>
                         </Grid>
                     </StackLayout>
                 </Frame>
-
             </StackLayout>
         </ScrollView>
     </Grid>

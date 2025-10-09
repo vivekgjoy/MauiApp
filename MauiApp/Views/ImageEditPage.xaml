@@ -14,8 +14,8 @@
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF6B5A" Offset="0.0" />
-                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
@@ -24,7 +24,7 @@
 
             <!-- Top Bar -->
             <Grid Grid.Row="0"
-                  BackgroundColor="#FF6B5A"
+                  BackgroundColor="{StaticResource TopCoral}"
                   HeightRequest="70"
                   Padding="12,40,12,12"
                   HorizontalOptions="FillAndExpand"
@@ -96,52 +96,52 @@
                     <!-- Tools: Brush/Eraser + Undo/Redo -->
                     <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
                         <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
-                                BackgroundColor="#FF6B5A" TextColor="White" CornerRadius="8" WidthRequest="44"/>
+                                BackgroundColor="{StaticResource TopCoral}" TextColor="White" CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <BoxView Grid.Column="2"/>
                         <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                     </Grid>
 
                     <!-- Symbols row -->
                     <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
                         <Button x:Name="ArrowToolButton" Grid.Column="0" Text="➡️" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="CircleToolButton" Grid.Column="1" Text="⭕" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="SquareToolButton" Grid.Column="2" Text="⬜" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="CheckToolButton" Grid.Column="3" Text="✅" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="CrossToolButton" Grid.Column="4" Text="❌" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="#FF6B5A"
-                                BorderColor="#FF6B5A" BorderWidth="1"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                     </Grid>
 
                     <!-- Save Button -->
                     <Button Text="Save Image"
                             Clicked="OnSaveClicked"
-                            BackgroundColor="#FF6B5A"
+                            BackgroundColor="{StaticResource TopCoral}"
                             TextColor="White"
-                            BorderColor="#F58C6B"
+                            BorderColor="{StaticResource BottomCoral}"
                             BorderWidth="1.5"
                             CornerRadius="8"
                             HeightRequest="48" />

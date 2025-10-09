@@ -13,8 +13,8 @@
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF6B5A" Offset="0.0" />
-                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
@@ -258,14 +258,14 @@
                         <!-- ✅ Updated Button -->
                         <Button Text="Log In"
                                 Command="{Binding LoginCommand}"
-                                BackgroundColor="#FF6B5A"
+                                BackgroundColor="{StaticResource TopCoral}"
                                 TextColor="White"
                                 CornerRadius="10"
                                 HeightRequest="48"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
 
                         <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                           Color="{StaticResource PrimaryRed}"
+                                           Color="{StaticResource TopCoral}"
                                            IsVisible="{Binding IsBusy}"
                                            HorizontalOptions="Center" />
                     </StackLayout>

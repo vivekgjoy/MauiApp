@@ -4,20 +4,20 @@ namespace MauiApp.Views.Components;
 
 public partial class GenericNavigationBar : ContentView
 {
-    public static readonly BindableProperty TitleProperty = BindableProperty.Create(
-        nameof(Title), typeof(string), typeof(GenericNavigationBar), string.Empty);
+    public static readonly BindableProperty TitleProperty =
+        BindableProperty.Create(nameof(Title), typeof(string), typeof(GenericNavigationBar), string.Empty);
 
-    public static readonly BindableProperty ShowRightActionProperty = BindableProperty.Create(
-        nameof(ShowRightAction), typeof(bool), typeof(GenericNavigationBar), false);
+    public static readonly BindableProperty ShowRightActionProperty =
+        BindableProperty.Create(nameof(ShowRightAction), typeof(bool), typeof(GenericNavigationBar), false);
 
-    public static readonly BindableProperty RightActionTextProperty = BindableProperty.Create(
-        nameof(RightActionText), typeof(string), typeof(GenericNavigationBar), string.Empty);
+    public static readonly BindableProperty RightActionTextProperty =
+        BindableProperty.Create(nameof(RightActionText), typeof(string), typeof(GenericNavigationBar), string.Empty);
 
-    public static readonly BindableProperty BackCommandProperty = BindableProperty.Create(
-        nameof(BackCommand), typeof(ICommand), typeof(GenericNavigationBar), null);
+    public static readonly BindableProperty BackCommandProperty =
+        BindableProperty.Create(nameof(BackCommand), typeof(ICommand), typeof(GenericNavigationBar), null);
 
-    public static readonly BindableProperty RightActionCommandProperty = BindableProperty.Create(
-        nameof(RightActionCommand), typeof(ICommand), typeof(GenericNavigationBar), null);
+    public static readonly BindableProperty RightActionCommandProperty =
+        BindableProperty.Create(nameof(RightActionCommand), typeof(ICommand), typeof(GenericNavigationBar), null);
 
     public string Title
     {
@@ -59,23 +59,24 @@ public partial class GenericNavigationBar : ContentView
         if (BackCommand != null && BackCommand.CanExecute(null))
         {
             BackCommand.Execute(null);
+            return;
         }
-        else
+
+        // Fallback: Use Shell or Navigation
+        try
         {
-            // Default behavior - go back
             if (Application.Current?.MainPage is Shell shell)
             {
-                await shell.GoToAsync("..");
+                await shell.GoToAsync("..", true);
+            }
+            else if (Application.Current?.MainPage?.Navigation?.NavigationStack?.Count > 1)
+            {
+                await Application.Current.MainPage.Navigation.PopAsync(true);
             }
         }
-    }
-
-    private void OnRightActionClicked(object sender, EventArgs e)
-    {
-        if (RightActionCommand != null && RightActionCommand.CanExecute(null))
+        catch
         {
-            RightActionCommand.Execute(null);
+            // safe fallback, ignore errors
         }
     }
 }
-

@@ -4,48 +4,57 @@
              x:Class="MauiApp.Views.Components.GenericNavigationBar"
              x:Name="NavigationBar">
 
-    <Grid BackgroundColor="{StaticResource PrimaryRed}"
-          HeightRequest="60"
-          Padding="15,10,15,10"
-          Margin="0,0,0,0">
-        
-        <Grid ColumnDefinitions="Auto,*,Auto"
-              VerticalOptions="Center">
-            
+    <!-- Gradient background same as Splash/Login -->
+    <Grid HeightRequest="100"
+          Padding="0"
+          Background="Transparent">
+
+        <BoxView Grid.RowSpan="1">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <!-- Navigation Content -->
+        <Grid Padding="15,50,15,15"
+            ColumnDefinitions="Auto,*,Auto"
+              VerticalOptions="Center"
+              Background="Transparent">
+
             <!-- Back Button -->
-            <Button Grid.Column="0"
-                    x:Name="BackButton"
-                    BackgroundColor="Transparent"
-                    WidthRequest="40"
-                    HeightRequest="40"
-                    VerticalOptions="Center"
-                    Text="←"
-                    FontSize="24"
-                    TextColor="White"
-                    Clicked="OnBackClicked" />
+            <ImageButton Grid.Column="0"
+                         Source="ic_arrow_back.svg"
+                         WidthRequest="30"
+                         HeightRequest="30"
+                         BackgroundColor="Transparent"
+                         Clicked="OnBackClicked"
+                         VerticalOptions="Center" />
 
             <!-- Title -->
             <Label Grid.Column="1"
                    x:Name="TitleLabel"
                    Text="{Binding Source={x:Reference NavigationBar}, Path=Title}"
-                   TextColor="White"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
-                   FontSize="20"
-                   FontAttributes="Bold" />
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="White" />
 
-            <!-- Right Action Button (Optional) -->
+            <!-- Right Action Button -->
             <Button Grid.Column="2"
                     x:Name="RightActionButton"
-                    BackgroundColor="Transparent"
-                    WidthRequest="40"
-                    HeightRequest="40"
-                    VerticalOptions="Center"
                     Text="{Binding Source={x:Reference NavigationBar}, Path=RightActionText}"
+                    IsVisible="{Binding Source={x:Reference NavigationBar}, Path=ShowRightAction}"
+                    Command="{Binding Source={x:Reference NavigationBar}, Path=RightActionCommand}"
+                    BackgroundColor="Transparent"
                     FontSize="16"
                     TextColor="White"
-                    IsVisible="{Binding Source={x:Reference NavigationBar}, Path=ShowRightAction}"
-                    Clicked="OnRightActionClicked" />
+                    Padding="10,0"
+                    VerticalOptions="Center" />
+
         </Grid>
     </Grid>
 </ContentView>

@@ -13,6 +13,10 @@
     <Color x:Key="CoralOrange">#F58B7B</Color>
     <Color x:Key="CoralOrangeDark">#E67A6B</Color>
     
+    <!-- Top Coral Colors for App Theme -->
+    <Color x:Key="TopCoral">#FF6B5A</Color>
+    <Color x:Key="BottomCoral">#F58C6B</Color>
+    
     <!-- Aliases for styles expecting generic keys -->
     <Color x:Key="Primary">#ED1C24</Color>
     <Color x:Key="PrimaryDark">#C41E3A</Color>

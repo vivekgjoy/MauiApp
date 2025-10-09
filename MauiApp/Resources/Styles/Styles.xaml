@@ -474,20 +474,20 @@
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource TopCoral}" />
         <Setter Property="Shell.ForegroundColor" Value="{StaticResource White}" />
         <Setter Property="Shell.TitleColor" Value="{StaticResource White}" />
         <Setter Property="Shell.DisabledColor" Value="{StaticResource Gray300}" />
         <Setter Property="Shell.UnselectedColor" Value="{StaticResource Gray200}" />
         <Setter Property="Shell.NavBarHasShadow" Value="False" />
-        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource TopCoral}" />
         <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource White}" />
         <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource White}" />
         <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource Gray200}" />
     </Style>
 
     <Style TargetType="NavigationPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="BarBackgroundColor" Value="{StaticResource TopCoral}" />
         <Setter Property="BarTextColor" Value="{StaticResource White}" />
         <Setter Property="IconColor" Value="{StaticResource White}" />
     </Style>

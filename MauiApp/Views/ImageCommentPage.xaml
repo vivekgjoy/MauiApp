@@ -9,13 +9,13 @@
              NavigationPage.HasNavigationBar="False"
              NavigationPage.HasBackButton="False">
 
-    <!-- Gradient Background like Splash/Login -->
+    <!-- Background Gradient (Same as Add New Report Page) -->
     <Grid>
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#FF6B5A" Offset="0.0" />
-                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <GradientStop Color="#FF826C" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
@@ -24,11 +24,18 @@
               RowSpacing="0"
               Padding="0">
 
-            <!-- Generic Navigation Bar -->
-            <components:GenericNavigationBar Grid.Row="0"
-                                             Title="Add Comment"
-                                             Margin="0,0,0,0"
-                                             x:Name="NavigationBar" />
+            <!-- Custom Header -->
+            <Grid Grid.Row="0"
+                  HeightRequest="80"
+                  Padding="20,40,20,10"
+                  BackgroundColor="Transparent">
+                <Label Text="Add Comment"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+            </Grid>
 
             <!-- Main Content -->
             <ScrollView Grid.Row="1"
@@ -49,7 +56,7 @@
                     </Frame>
 
                     <!-- Comment Section -->
-                    <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                    <Frame BackgroundColor="White"
                            CornerRadius="12"
                            Padding="20"
                            HasShadow="True">
@@ -57,12 +64,12 @@
                             <Label Text="Add Comment (Optional)"
                                    FontSize="16"
                                    FontAttributes="Bold"
-                                   TextColor="#FF6B5A" />
+                                   TextColor="Black" />
 
                             <Editor x:Name="CommentEditor"
                                     Placeholder="Enter your comment about this image..."
-                                    PlaceholderColor="#F58C6B"
-                                    TextColor="#FF6B5A"
+                                    PlaceholderColor="#444444"
+                                    TextColor="Black"
                                     BackgroundColor="Transparent"
                                     FontSize="16"
                                     HeightRequest="120"
@@ -73,19 +80,19 @@
                 </StackLayout>
             </ScrollView>
 
-            <!-- Action Buttons -->
+            <!-- Bottom Buttons -->
             <Frame Grid.Row="2"
                    BackgroundColor="Transparent"
                    CornerRadius="0"
                    Padding="20"
-                   HasShadow="True"
+                   HasShadow="False"
                    Margin="0">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
                     <Button Grid.Column="0"
                             Text="Skip"
                             BackgroundColor="Transparent"
-                            TextColor="#FF6B5A"
-                            BorderColor="#FF6B5A"
+                            TextColor="White"
+                            BorderColor="White"
                             BorderWidth="1.5"
                             CornerRadius="8"
                             Clicked="OnSkipClicked" />
@@ -94,7 +101,7 @@
                             Text="Save &amp; Continue"
                             BackgroundColor="#FF6B5A"
                             TextColor="White"
-                            BorderColor="#F58C6B"
+                            BorderColor="#FF826C"
                             BorderWidth="1.5"
                             CornerRadius="8"
                             Clicked="OnSaveAndContinueClicked" />

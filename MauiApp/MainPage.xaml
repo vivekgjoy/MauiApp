@@ -9,9 +9,9 @@
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
                     <!-- Top coral -->
-                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
                     <!-- Bottom soft orange -->
                 </LinearGradientBrush>
             </BoxView.Background>
@@ -34,7 +34,7 @@
             <StackLayout Spacing="20" Padding="20">
 
                 <!-- Welcome Header -->
-                <Frame Style="{StaticResource CardElevated}" Background="{StaticResource PrimaryRedGradient}">
+                <Frame Style="{StaticResource CardElevated}" Background="{StaticResource TopCoral}">
                     <StackLayout Spacing="10">
                         <Label Text="Welcome to SmartERP"
                                Style="{StaticResource TextH2}"

@@ -6,7 +6,7 @@
 
     <!-- Button Styles -->
     <Style x:Key="PrimaryButton" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource PrimaryRedGradient}" />
+        <Setter Property="Background" Value="{StaticResource TopCoral}" />
         <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
         <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
@@ -23,7 +23,7 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16,12" />
         <Setter Property="MinimumHeightRequest" Value="48" />
-        <Setter Property="BorderColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="BorderColor" Value="{StaticResource TopCoral}" />
         <Setter Property="BorderWidth" Value="2" />
     </Style>
 

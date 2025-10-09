@@ -7,47 +7,59 @@
              BackgroundColor="#F5F5F5"
              Padding="0">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid>
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              BackgroundColor="#FF6B5A"
-              Padding="0,50,0,15">
-            <!-- top padding for safe area/status bar -->
+        <!-- 🔸 Background Gradient -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- 🔹 Custom Header -->
+        <Grid x:Name="CustomNavHeader"
+              HeightRequest="120"
+              VerticalOptions="Start"
+              HorizontalOptions="FillAndExpand">
 
-            <!-- Back Button -->
-            <ImageButton Source="ic_arrow_back.svg"
-                         WidthRequest="28"
-                         HeightRequest="28"
-                         BackgroundColor="Transparent"
-                         Margin="20,0,0,0"
-                         Clicked="OnBackButtonClicked"
-                         VerticalOptions="Center"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="24"/>
+            </Grid.RowDefinitions>
 
-            <!-- Title and Subtitle -->
-            <StackLayout Grid.Column="1"
-                         HorizontalOptions="Center"
-                         VerticalOptions="Center">
-                <Label Text="Report Preview"
-                       FontSize="24"
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ImageButton Grid.Column="0"
+                             Source="ic_arrow_back.svg"
+                             BackgroundColor="Transparent"
+                             WidthRequest="28"
+                             HeightRequest="28"
+                             HorizontalOptions="Start"
+                             VerticalOptions="Center"
+                             Clicked="OnBackButtonClicked"/>
+
+                <Label Grid.Column="1"
+                       Text="Report Preview"
+                       FontSize="18"
                        FontAttributes="Bold"
                        TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Review your report before publishing"
-                       FontSize="16"
-                       TextColor="White"
                        HorizontalOptions="Center"
-                       Opacity="0.9" />
-            </StackLayout>
+                       VerticalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+            </Grid>
         </Grid>
 
-        <!-- Main Content -->
-        <ScrollView Grid.Row="1" Padding="20">
+        <!-- 🧾 Main Content -->
+        <ScrollView Margin="0,110,0,0" Padding="20">
             <StackLayout Spacing="20">
 
                 <!-- Images Count and Controls -->
@@ -73,7 +85,7 @@
                                     Text="−"
                                     FontSize="20"
                                     FontAttributes="Bold"
-                                    BackgroundColor="#FF6B5A"
+                                    BackgroundColor="{StaticResource TopCoral}"
                                     TextColor="White"
                                     WidthRequest="50"
                                     HeightRequest="50"
@@ -93,7 +105,7 @@
                                     Text="+"
                                     FontSize="20"
                                     FontAttributes="Bold"
-                                    BackgroundColor="#FF6B5A"
+                                    BackgroundColor="{StaticResource TopCoral}"
                                     TextColor="White"
                                     WidthRequest="50"
                                     HeightRequest="50"
@@ -112,8 +124,8 @@
             </StackLayout>
         </ScrollView>
 
-        <!-- Publish Button -->
-        <Frame Grid.Row="2" 
+        <!-- 🔘 Publish Button -->
+        <Frame VerticalOptions="End"
                BackgroundColor="White" 
                Padding="20,15" 
                HasShadow="True"
@@ -122,7 +134,7 @@
                     Text="Publish PDF"
                     FontSize="18"
                     FontAttributes="Bold"
-                    BackgroundColor="#FF6B5A"
+                    BackgroundColor="{StaticResource TopCoral}"
                     TextColor="White"
                     HeightRequest="50"
                     CornerRadius="25"
@@ -132,8 +144,7 @@
         <!-- Progress Overlay -->
         <Grid x:Name="ProgressOverlay"
               BackgroundColor="#80000000"
-              IsVisible="False"
-              Grid.RowSpan="3">
+              IsVisible="False">
             <Frame BackgroundColor="White"
                    CornerRadius="12"
                    Padding="30"
@@ -143,7 +154,7 @@
                 <StackLayout Spacing="20" HorizontalOptions="Center">
                     <ActivityIndicator x:Name="ProgressIndicator"
                                        IsRunning="False"
-                                       Color="#FF6B5A"
+                                       Color="{StaticResource TopCoral}"
                                        WidthRequest="40"
                                        HeightRequest="40" />
                     <Label x:Name="ProgressLabel"
@@ -154,7 +165,6 @@
                 </StackLayout>
             </Frame>
         </Grid>
-
     </Grid>
 
 </ContentPage>
