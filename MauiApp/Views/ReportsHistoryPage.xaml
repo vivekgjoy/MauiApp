@@ -5,23 +5,33 @@
              x:Class="MauiApp.Views.ReportsHistoryPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
-             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Black}}">
+             Background="Transparent">
 
     <Grid RowDefinitions="Auto,*,Auto"
           RowSpacing="0"
           Padding="0">
 
+        <!-- Gradient Background -->
+        <BoxView Grid.RowSpan="3">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
         <!-- Generic Navigation Bar -->
         <components:GenericNavigationBar Grid.Row="0"
-                                        Title="Reports History"
-                                        Margin="0,0,0,0"
-                                        x:Name="NavigationBar" />
+                                         Title="Reports History"
+                                         Margin="0,0,0,0"
+                                         x:Name="NavigationBar" />
 
         <!-- Main Content -->
         <ScrollView Grid.Row="1"
                     Padding="20">
             <StackLayout Spacing="20">
-                
+
                 <!-- Reports List -->
                 <CollectionView x:Name="ReportsCollectionView"
                                 ItemsSource="{Binding Reports}"
@@ -33,50 +43,50 @@
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                            <Frame BackgroundColor="White"
                                    CornerRadius="12"
                                    Padding="15"
                                    HasShadow="True">
                                 <Grid ColumnDefinitions="Auto,*,Auto"
                                       ColumnSpacing="15">
-                                    
+
                                     <!-- PDF Icon -->
                                     <Label Grid.Column="0"
                                            Text="📄"
                                            FontSize="32"
                                            VerticalOptions="Center" />
-                                    
+
                                     <!-- Report Info -->
                                     <StackLayout Grid.Column="1"
                                                  Spacing="5">
                                         <Label Text="{Binding FileName}"
                                                FontSize="16"
                                                FontAttributes="Bold"
-                                               TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+                                               TextColor="Black" />
                                         <Label Text="{Binding CreatedDate, StringFormat='Generated: {0:MMM dd, yyyy HH:mm}'}"
                                                FontSize="14"
-                                               TextColor="{StaticResource TextHint}" />
+                                               TextColor="#444" />
                                         <Label Text="{Binding ImageCount, StringFormat='{0} images'}"
                                                FontSize="12"
-                                               TextColor="{StaticResource TextHint}" />
+                                               TextColor="#666" />
                                     </StackLayout>
-                                    
+
                                     <!-- Action Buttons -->
                                     <StackLayout Grid.Column="2"
                                                  Orientation="Horizontal"
                                                  Spacing="10">
                                         <Button Text="View"
                                                 FontSize="12"
-                                                BackgroundColor="{StaticResource PrimaryRed}"
-                                                TextColor="{StaticResource White}"
+                                                BackgroundColor="#FF6B5A"
+                                                TextColor="White"
                                                 HeightRequest="32"
                                                 WidthRequest="60"
                                                 Clicked="OnViewReportClicked"
                                                 CommandParameter="{Binding FilePath}" />
                                         <Button Text="Share"
                                                 FontSize="12"
-                                                BackgroundColor="{StaticResource Gray600}"
-                                                TextColor="{StaticResource White}"
+                                                BackgroundColor="#F58C6B"
+                                                TextColor="White"
                                                 HeightRequest="32"
                                                 WidthRequest="60"
                                                 Clicked="OnShareReportClicked"
@@ -90,7 +100,7 @@
 
                 <!-- Empty State -->
                 <Frame x:Name="EmptyStateFrame"
-                       BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                       BackgroundColor="White"
                        CornerRadius="12"
                        Padding="30"
                        HasShadow="True"
@@ -103,11 +113,11 @@
                         <Label Text="No Reports Generated"
                                FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}"
+                               TextColor="Black"
                                HorizontalOptions="Center" />
                         <Label Text="Generate your first PDF report to see it here"
                                FontSize="14"
-                               TextColor="{StaticResource TextHint}"
+                               TextColor="#666"
                                HorizontalOptions="Center" />
                     </StackLayout>
                 </Frame>
@@ -117,16 +127,16 @@
 
         <!-- Action Buttons -->
         <Frame Grid.Row="2"
-               BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+               BackgroundColor="Transparent"
                CornerRadius="0"
                Padding="20,15"
-               HasShadow="True"
+               HasShadow="False"
                Margin="0">
             <Button Text="Generate New Report"
                     FontSize="16"
                     FontAttributes="Bold"
-                    BackgroundColor="{StaticResource PrimaryRed}"
-                    TextColor="{StaticResource White}"
+                    BackgroundColor="#FF6B5A"
+                    TextColor="White"
                     HeightRequest="50"
                     Clicked="OnGenerateNewReportClicked" />
         </Frame>

@@ -5,113 +5,148 @@
              x:Class="MauiApp.Views.ImageEditPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
-             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Black}}"
              Padding="0"
              NavigationPage.HasNavigationBar="False"
              NavigationPage.HasBackButton="False">
 
-    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+    <!-- Gradient Background like Splash/Login -->
+    <Grid>
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-        <!-- Top Bar -->
-        <Grid Grid.Row="0"
-              BackgroundColor="{StaticResource PrimaryRed}"
-              HeightRequest="70"
-              Padding="12,40,12,12"
-              HorizontalOptions="FillAndExpand"
-              VerticalOptions="Start">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
 
-            <ImageButton Source="ic_back.png"
-                         BackgroundColor="Transparent"
-                         WidthRequest="28"
-                         HeightRequest="28"
-                         Clicked="OnBackClicked" />
+            <!-- Top Bar -->
+            <Grid Grid.Row="0"
+                  BackgroundColor="#FF6B5A"
+                  HeightRequest="70"
+                  Padding="12,40,12,12"
+                  HorizontalOptions="FillAndExpand"
+                  VerticalOptions="Start">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <Label Grid.Column="1"
-                   Text="Edit Image"
-                   TextColor="White"
-                   FontSize="18"
-                   VerticalOptions="Center"
-                   HorizontalOptions="Center" />
+                <ImageButton Source="ic_back.png"
+                             BackgroundColor="Transparent"
+                             WidthRequest="28"
+                             HeightRequest="28"
+                             Clicked="OnBackClicked" />
 
-            <BoxView Grid.Column="2" WidthRequest="28" HeightRequest="28" BackgroundColor="Transparent"/>
-        </Grid>
+                <Label Grid.Column="1"
+                       Text="Edit Image"
+                       TextColor="White"
+                       FontSize="18"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
 
-        <!-- Canvas -->
-        <Grid Grid.Row="1"
-              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
-            <Image x:Name="EditImage"
-                   Aspect="AspectFit"
-                   VerticalOptions="FillAndExpand"
-                   HorizontalOptions="FillAndExpand"/>
-            <skia:SKCanvasView x:Name="CanvasView"
-                               PaintSurface="OnCanvasViewPaintSurface"
-                               EnableTouchEvents="True"
-                               Touch="OnTouchEffectAction"
-                               VerticalOptions="FillAndExpand"
-                               HorizontalOptions="FillAndExpand"/>
-        </Grid>
+                <BoxView Grid.Column="2" WidthRequest="28" HeightRequest="28" BackgroundColor="Transparent"/>
+            </Grid>
 
-        <!-- Bottom Tools -->
-        <Grid Grid.Row="2" Padding="12" RowSpacing="8">
-            <StackLayout Spacing="8">
+            <!-- Canvas Area -->
+            <Grid Grid.Row="1"
+                  BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
+                <Image x:Name="EditImage"
+                       Aspect="AspectFit"
+                       VerticalOptions="FillAndExpand"
+                       HorizontalOptions="FillAndExpand"/>
+                <skia:SKCanvasView x:Name="CanvasView"
+                                   PaintSurface="OnCanvasViewPaintSurface"
+                                   EnableTouchEvents="True"
+                                   Touch="OnTouchEffectAction"
+                                   VerticalOptions="FillAndExpand"
+                                   HorizontalOptions="FillAndExpand"/>
+            </Grid>
 
-                <!-- Brush Size + Colors -->
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                    <StackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Brush Size" FontAttributes="Bold" FontSize="13"/>
-                        <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="60" Value="5" ValueChanged="OnBrushSizeChanged" />
-                        <Label x:Name="BrushSizeLabel" Text="5px" FontSize="12" HorizontalOptions="Center"/>
-                    </StackLayout>
+            <!-- Bottom Tools -->
+            <Grid Grid.Row="2" Padding="12" RowSpacing="8">
+                <StackLayout Spacing="8">
 
-                    <StackLayout Grid.Column="1" Spacing="4">
-                        <Label Text="Color" FontAttributes="Bold" FontSize="13"/>
-                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,4,0,0">
-                            <Button x:Name="RedColorButton" Grid.Column="0" BackgroundColor="Red" CornerRadius="18"
-                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                            <Button x:Name="BlueColorButton" Grid.Column="1" BackgroundColor="Blue" CornerRadius="18"
-                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                            <Button x:Name="GreenColorButton" Grid.Column="2" BackgroundColor="Green" CornerRadius="18"
-                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                            <Button x:Name="BlackColorButton" Grid.Column="3" BackgroundColor="Black" CornerRadius="18"
-                                    WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                        </Grid>
-                    </StackLayout>
-                </Grid>
+                    <!-- Brush Size + Colors -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <StackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Brush Size" FontAttributes="Bold" FontSize="13"/>
+                            <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="60" Value="5" ValueChanged="OnBrushSizeChanged" />
+                            <Label x:Name="BrushSizeLabel" Text="5px" FontSize="12" HorizontalOptions="Center"/>
+                        </StackLayout>
 
-                <!-- Tools: Brush/Eraser + Undo/Redo -->
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
-                    <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
-                            BackgroundColor="{StaticResource PrimaryRed}" TextColor="White" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <BoxView Grid.Column="2"/>
-                    <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                </Grid>
+                        <StackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Color" FontAttributes="Bold" FontSize="13"/>
+                            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,4,0,0">
+                                <Button x:Name="RedColorButton" Grid.Column="0" BackgroundColor="Red" CornerRadius="18"
+                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                                <Button x:Name="BlueColorButton" Grid.Column="1" BackgroundColor="Blue" CornerRadius="18"
+                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                                <Button x:Name="GreenColorButton" Grid.Column="2" BackgroundColor="Green" CornerRadius="18"
+                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                                <Button x:Name="BlackColorButton" Grid.Column="3" BackgroundColor="Black" CornerRadius="18"
+                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
+                            </Grid>
+                        </StackLayout>
+                    </Grid>
 
-                <!-- Symbols row -->
-                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-                    <Button x:Name="ArrowToolButton" Grid.Column="0" Text="➡️" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="CircleToolButton" Grid.Column="1" Text="⭕" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="SquareToolButton" Grid.Column="2" Text="⬜" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="CheckToolButton" Grid.Column="3" Text="✅" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                    <Button x:Name="CrossToolButton" Grid.Column="4" Text="❌" Clicked="OnToolSelected"
-                            BackgroundColor="Transparent" TextColor="{StaticResource PrimaryRed}" CornerRadius="8" WidthRequest="44"/>
-                </Grid>
+                    <!-- Tools: Brush/Eraser + Undo/Redo -->
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
+                        <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
+                                BackgroundColor="#FF6B5A" TextColor="White" CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <BoxView Grid.Column="2"/>
+                        <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                    </Grid>
 
-                <Button Text="Save Image" Clicked="OnSaveClicked" Style="{StaticResource PrimaryButton}" />
-            </StackLayout>
+                    <!-- Symbols row -->
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+                        <Button x:Name="ArrowToolButton" Grid.Column="0" Text="➡️" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="CircleToolButton" Grid.Column="1" Text="⭕" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="SquareToolButton" Grid.Column="2" Text="⬜" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="CheckToolButton" Grid.Column="3" Text="✅" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <Button x:Name="CrossToolButton" Grid.Column="4" Text="❌" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="#FF6B5A"
+                                BorderColor="#FF6B5A" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                    </Grid>
+
+                    <!-- Save Button -->
+                    <Button Text="Save Image"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="#FF6B5A"
+                            TextColor="White"
+                            BorderColor="#F58C6B"
+                            BorderWidth="1.5"
+                            CornerRadius="8"
+                            HeightRequest="48" />
+                </StackLayout>
+            </Grid>
         </Grid>
     </Grid>
 </ContentPage>

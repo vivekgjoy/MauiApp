@@ -9,50 +9,51 @@
              Shell.TabBarIsVisible="False">
 
     <Grid x:Name="RootGrid">
-        <!-- Background Gradient -->
-        <BoxView Background="{StaticResource PrimaryRedGradient}" />
+        <!-- Background Gradient (same as SplashScreen) -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
         <!-- Main Content -->
         <ScrollView x:Name="MainScrollView"
-            VerticalOptions="FillAndExpand"
-            HorizontalOptions="FillAndExpand"
-            IsClippedToBounds="True">
+                    VerticalOptions="FillAndExpand"
+                    HorizontalOptions="FillAndExpand"
+                    IsClippedToBounds="True">
 
             <Grid VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
-                    <!-- Flexible top spacer -->
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <!-- Flexible bottom spacer -->
                 </Grid.RowDefinitions>
 
-                <!-- Spacer for status bar -->
                 <BoxView Grid.Row="0" BackgroundColor="Transparent" />
 
-                <!-- Biometric Section (Red Area) -->
+                <!-- Biometric Section -->
                 <StackLayout Grid.Row="1"
                              VerticalOptions="Center" 
                              HorizontalOptions="Center" 
                              Spacing="20"
                              IsVisible="{Binding ShowBiometricSection}">
-                    
-                    <!-- Greeting Message -->
+
                     <Label Text="{Binding GreetingMessage}"
                            Style="{StaticResource TextH2}"
                            TextColor="{StaticResource White}"
                            HorizontalOptions="Center" />
-                    
-                    <!-- Biometric Instruction -->
+
                     <Label Text="Tap to login with Bio or FaceID"
                            Style="{StaticResource TextBody}"
                            TextColor="{StaticResource White}"
                            HorizontalOptions="Center"
                            Opacity="0.9" />
-                    
-                    <!-- Biometric Icon Button -->
+
                     <Button Command="{Binding BiometricLoginCommand}"
                             BackgroundColor="Transparent"
                             BorderColor="{StaticResource White}"
@@ -68,7 +69,7 @@
                     </Button>
                 </StackLayout>
 
-                <!-- OR Separator with Lines -->
+                <!-- OR Separator -->
                 <Grid Grid.Row="2"
                       HorizontalOptions="Center" 
                       Margin="0,20,0,0"
@@ -78,31 +79,25 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="60" />
                     </Grid.ColumnDefinitions>
-                    
-                    <!-- Left Line -->
+
                     <BoxView Grid.Column="0" 
                              BackgroundColor="{StaticResource White}" 
                              HeightRequest="1" 
                              VerticalOptions="Center" 
                              Margin="0,0,10,0" />
-                    
-                    <!-- OR Text -->
+
                     <Label Grid.Column="1" 
                            Text="OR"
                            Style="{StaticResource TextBody}"
                            TextColor="{StaticResource White}"
                            HorizontalOptions="Center" />
-                    
-                    <!-- Right Line -->
+
                     <BoxView Grid.Column="2" 
                              BackgroundColor="{StaticResource White}" 
                              HeightRequest="1" 
                              VerticalOptions="Center" 
                              Margin="10,0,0,0" />
                 </Grid>
-
-                <!-- Flexible spacer to push login card to center -->
-                <BoxView Grid.Row="3" BackgroundColor="Transparent" />
 
                 <!-- Login Form Card -->
                 <Frame Margin="24,20,24,40"
@@ -115,11 +110,9 @@
                     <Frame.Style>
                         <Style TargetType="Frame" BasedOn="{StaticResource CardElevated}">
                             <Setter Property="Grid.Row" Value="3" />
-                            <!-- default when biometric visible -->
                             <Style.Triggers>
                                 <DataTrigger TargetType="Frame" Binding="{Binding ShowBiometricSection}" Value="False">
                                     <Setter Property="Grid.Row" Value="2" />
-                                    <!-- middle row when only card -->
                                     <Setter Property="Grid.RowSpan" Value="1" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -127,14 +120,12 @@
                     </Frame.Style>
 
                     <StackLayout Spacing="20">
-
-                        <!-- Login Title -->
                         <Label Text="Login"
                                Style="{StaticResource TextH3}"
                                TextColor="{StaticResource TextPrimary}"
                                HorizontalOptions="Start" />
 
-                        <!-- Tenant Selection Bottom Sheet Trigger -->
+                        <!-- Tenant Selection -->
                         <Border x:Name="TenantBorder" 
                                 Stroke="{StaticResource Gray300}" 
                                 StrokeThickness="1" 
@@ -154,7 +145,6 @@
                             </Border.GestureRecognizers>
 
                             <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Padding="10,0">
-                                <!-- Entry used for placeholder + tenant name -->
                                 <Entry x:Name="TenantEntry"
                                        Grid.Column="0"
                                        Text="{Binding SelectedTenant.Name}"
@@ -185,8 +175,7 @@
                             </Grid>
                         </Border>
 
-
-                        <!-- Username/Email Field -->
+                        <!-- Username -->
                         <Border x:Name="UsernameBorder" 
                                 Stroke="{StaticResource Gray300}" 
                                 StrokeThickness="1" 
@@ -210,7 +199,7 @@
                                    ClearButtonVisibility="WhileEditing" />
                         </Border>
 
-                        <!-- Password Field -->
+                        <!-- Password -->
                         <Border x:Name="PasswordBorder" 
                                 Stroke="{StaticResource Gray300}" 
                                 StrokeThickness="1" 
@@ -257,7 +246,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- Forgot Password Link -->
                         <Label Text="Forgot Password?"
                                Style="{StaticResource TextLink}"
                                HorizontalOptions="End"
@@ -267,21 +255,21 @@
                             </Label.GestureRecognizers>
                         </Label>
 
-                        <!-- Login Button -->
+                        <!-- ✅ Updated Button -->
                         <Button Text="Log In"
                                 Command="{Binding LoginCommand}"
-                                Style="{StaticResource PrimaryButton}"
+                                BackgroundColor="#FF6B5A"
+                                TextColor="White"
+                                CornerRadius="10"
+                                HeightRequest="48"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
 
-                        <!-- Loading Indicator -->
                         <ActivityIndicator IsRunning="{Binding IsBusy}"
                                            Color="{StaticResource PrimaryRed}"
                                            IsVisible="{Binding IsBusy}"
                                            HorizontalOptions="Center" />
-
                     </StackLayout>
                 </Frame>
-
             </Grid>
         </ScrollView>
     </Grid>

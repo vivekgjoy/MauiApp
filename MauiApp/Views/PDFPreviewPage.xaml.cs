@@ -98,6 +98,19 @@ public partial class PDFPreviewPage : ContentPage
     private void OnPageLoaded(object sender, EventArgs e) { }
 #endif
 
+    private async void OnBackButtonClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await Navigation.PopAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error navigating back: {ex.Message}");
+            await DisplayAlert("Error", "Unable to navigate back.", "OK");
+        }
+    }
+
     private async Task OnBackClicked()
     {
         await Navigation.PopAsync();

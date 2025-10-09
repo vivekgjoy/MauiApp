@@ -1,12 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MauiApp.MainPage">
+             x:Class="MauiApp.MainPage"
+             Background="Transparent">
 
     <Grid>
-        <!-- Background -->
-        <BoxView Background="{StaticResource PrimaryRed}" />
-        
+        <!-- Gradient Background (coral/orange like login screen) -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <!-- Top coral -->
+                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <!-- Bottom soft orange -->
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
         <!-- Custom Header -->
         <StackLayout VerticalOptions="Start" 
                      Margin="0,60,0,0"
@@ -18,11 +28,11 @@
                    FontSize="24"
                    FontAttributes="Bold" />
         </StackLayout>
-        
+
         <!-- Main Content with Safe Area -->
         <ScrollView Margin="0,120,0,0">
             <StackLayout Spacing="20" Padding="20">
-                
+
                 <!-- Welcome Header -->
                 <Frame Style="{StaticResource CardElevated}" Background="{StaticResource PrimaryRedGradient}">
                     <StackLayout Spacing="10">
@@ -37,17 +47,15 @@
                                Opacity="0.9" />
                     </StackLayout>
                 </Frame>
-                
+
                 <!-- Dashboard Cards -->
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                    
-                    <!-- Quick Actions Card -->
                     <Frame Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Card}">
                         <StackLayout Spacing="15">
                             <Label Text="Quick Actions"
                                    Style="{StaticResource TextH3}"
                                    TextColor="{StaticResource TextPrimary}" />
-                            
+
                             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
                                 <Button Grid.Row="0" Grid.Column="0" 
                                         Text="Add Reports" 
@@ -66,8 +74,7 @@
                             </Grid>
                         </StackLayout>
                     </Frame>
-                    
-                    <!-- Recent Activity Card -->
+
                     <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
                         <StackLayout Spacing="10">
                             <Label Text="Recent Activity"
@@ -78,8 +85,7 @@
                                    TextColor="{StaticResource TextSecondary}" />
                         </StackLayout>
                     </Frame>
-                    
-                    <!-- Notifications Card -->
+
                     <Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
                         <StackLayout Spacing="10">
                             <Label Text="Notifications"
@@ -90,15 +96,13 @@
                                    TextColor="{StaticResource TextSecondary}" />
                         </StackLayout>
                     </Frame>
-                    
-                    <!-- Logout Button -->
+
                     <Button Grid.Row="2" Grid.ColumnSpan="2"
                             Text="Logout"
                             Style="{StaticResource PrimaryButton}"
                             Clicked="OnLogoutClicked" />
-                    
                 </Grid>
-                
+
             </StackLayout>
         </ScrollView>
     </Grid>

@@ -4,17 +4,35 @@
              x:Class="MauiApp.Views.PDFPreviewPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
-             BackgroundColor="#F5F5F5">
+             BackgroundColor="#F5F5F5"
+             Padding="0">
 
     <Grid RowDefinitions="Auto,*,Auto">
-        
+
         <!-- Header -->
-        <Frame Grid.Row="0" 
-               BackgroundColor="#ED1C24" 
-               Padding="20,15" 
-               HasShadow="False"
-               CornerRadius="0">
-            <StackLayout>
+        <Grid Grid.Row="0"
+              BackgroundColor="#FF6B5A"
+              Padding="0,50,0,15">
+            <!-- top padding for safe area/status bar -->
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Back Button -->
+            <ImageButton Source="ic_arrow_back.svg"
+                         WidthRequest="28"
+                         HeightRequest="28"
+                         BackgroundColor="Transparent"
+                         Margin="20,0,0,0"
+                         Clicked="OnBackButtonClicked"
+                         VerticalOptions="Center"/>
+
+            <!-- Title and Subtitle -->
+            <StackLayout Grid.Column="1"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center">
                 <Label Text="Report Preview"
                        FontSize="24"
                        FontAttributes="Bold"
@@ -26,12 +44,12 @@
                        HorizontalOptions="Center"
                        Opacity="0.9" />
             </StackLayout>
-        </Frame>
+        </Grid>
 
         <!-- Main Content -->
         <ScrollView Grid.Row="1" Padding="20">
             <StackLayout Spacing="20">
-                
+
                 <!-- Images Count and Controls -->
                 <Frame BackgroundColor="White" 
                        CornerRadius="8" 
@@ -44,24 +62,24 @@
                                FontAttributes="Bold"
                                TextColor="Black"
                                HorizontalOptions="Center" />
-                        
+
                         <Label Text="Images Per Page:"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="Gray" />
-                        
+
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
                             <Button Grid.Column="0"
                                     Text="−"
                                     FontSize="20"
                                     FontAttributes="Bold"
-                                    BackgroundColor="#ED1C24"
+                                    BackgroundColor="#FF6B5A"
                                     TextColor="White"
                                     WidthRequest="50"
                                     HeightRequest="50"
                                     CornerRadius="25"
                                     Clicked="OnDecreaseImagesPerPage" />
-                            
+
                             <Label Grid.Column="1"
                                    x:Name="ImagesPerPageLabel"
                                    Text="2"
@@ -70,12 +88,12 @@
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center"
                                    TextColor="Black" />
-                            
+
                             <Button Grid.Column="2"
                                     Text="+"
                                     FontSize="20"
                                     FontAttributes="Bold"
-                                    BackgroundColor="#ED1C24"
+                                    BackgroundColor="#FF6B5A"
                                     TextColor="White"
                                     WidthRequest="50"
                                     HeightRequest="50"
@@ -84,13 +102,13 @@
                         </Grid>
                     </StackLayout>
                 </Frame>
-                
+
                 <!-- Preview Pages Container -->
                 <StackLayout x:Name="PreviewContainer" Spacing="20" />
-                
+
                 <!-- Spacer for button -->
                 <BoxView HeightRequest="100" Color="Transparent" />
-                
+
             </StackLayout>
         </ScrollView>
 
@@ -104,7 +122,7 @@
                     Text="Publish PDF"
                     FontSize="18"
                     FontAttributes="Bold"
-                    BackgroundColor="#ED1C24"
+                    BackgroundColor="#FF6B5A"
                     TextColor="White"
                     HeightRequest="50"
                     CornerRadius="25"
@@ -125,7 +143,7 @@
                 <StackLayout Spacing="20" HorizontalOptions="Center">
                     <ActivityIndicator x:Name="ProgressIndicator"
                                        IsRunning="False"
-                                       Color="#ED1C24"
+                                       Color="#FF6B5A"
                                        WidthRequest="40"
                                        HeightRequest="40" />
                     <Label x:Name="ProgressLabel"
@@ -136,7 +154,7 @@
                 </StackLayout>
             </Frame>
         </Grid>
-        
+
     </Grid>
 
 </ContentPage>

@@ -20,10 +20,10 @@ public partial class AddReportPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        
+
         // Set navigation bar styling
         SetNavigationBarStyling();
-        
+
         // Initialize images collection
         await UpdateImagesCollection();
     }
@@ -79,9 +79,9 @@ public partial class AddReportPage : ContentPage
 
             // Create bottom sheet options
             var options = new List<string> { "Gallery", "Camera" };
-            
+
             var selectedOption = await _bottomSheetService.ShowSelectionAsync("Select Image Source", options);
-            
+
             if (selectedOption != null)
             {
                 await HandleImageSelection(selectedOption);
@@ -131,7 +131,7 @@ public partial class AddReportPage : ContentPage
             {
                 status = await Permissions.RequestAsync<Permissions.Camera>();
             }
-            
+
             if (status != PermissionStatus.Granted)
             {
                 await DisplayAlert("Permission Required", "Camera permission is required to take photos.", "OK");
@@ -148,23 +148,23 @@ public partial class AddReportPage : ContentPage
     {
         // Clear existing children
         ImagesGrid.Children.Clear();
-        
+
         // Add images to grid (2 per row)
         for (int i = 0; i < _reportImageService.ReportImages.Count; i++)
         {
             var reportImage = _reportImageService.ReportImages[i];
             var row = i / 2;
             var column = i % 2;
-            
+
             // Create the image frame
             var imageFrame = CreateImageFrame(reportImage, i);
-            
+
             // Add to grid
             Grid.SetRow(imageFrame, row);
             Grid.SetColumn(imageFrame, column);
             ImagesGrid.Children.Add(imageFrame);
         }
-        
+
         // Update button visibility
         AddImageButton.IsVisible = _reportImageService.ReportImages.Count < MaxImages;
     }

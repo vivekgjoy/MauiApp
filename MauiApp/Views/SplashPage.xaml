@@ -6,47 +6,56 @@
              x:DataType="viewmodels:SplashViewModel"
              Title="Splash"
              Shell.NavBarIsVisible="False"
-             Shell.TabBarIsVisible="False">
+             Shell.TabBarIsVisible="False"
+             Background="Transparent">
 
     <Grid>
-        <!-- Background Gradient -->
-        <BoxView Background="{StaticResource PrimaryRedGradient}" />
-        
+        <!-- Background Gradient (Coral → Soft Orange to match AddReportPage) -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FF6B5A" Offset="0.0" />
+                    <!-- Top coral -->
+                    <GradientStop Color="#F58C6B" Offset="1.0" />
+                    <!-- Bottom soft orange -->
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
         <!-- Main Content -->
-        <StackLayout VerticalOptions="Center" 
-                     HorizontalOptions="Center" 
+        <StackLayout VerticalOptions="Center"
+                     HorizontalOptions="Center"
                      Spacing="40"
                      Padding="40">
-            
+
             <!-- Logo -->
             <Image Source="appicon_converted.svg"
-                   Style="{StaticResource IconLarge}"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center"
                    WidthRequest="120"
-                   HeightRequest="120" />
-            
+                   HeightRequest="120"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+
             <!-- App Name -->
             <Label Text="SmartERP"
-                   Style="{StaticResource TextH1}"
-                   TextColor="{StaticResource White}"
+                   FontSize="36"
+                   FontAttributes="Bold"
+                   TextColor="White"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center" />
-            
+
             <!-- Tagline -->
             <Label Text="Enterprise Solutions"
-                   Style="{StaticResource TextBodyLarge}"
-                   TextColor="{StaticResource White}"
+                   FontSize="18"
+                   TextColor="White"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center"
                    Opacity="0.9" />
-            
+
             <!-- Loading Indicator -->
             <ActivityIndicator IsRunning="{Binding IsBusy}"
-                               Color="{StaticResource White}"
+                               Color="White"
                                WidthRequest="40"
                                HeightRequest="40" />
-            
         </StackLayout>
     </Grid>
 </ContentPage>
