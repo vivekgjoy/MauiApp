@@ -102,8 +102,8 @@ namespace MauiApp
                         var color = Colors.Red; // fallback
                         try
                         {
-                            // Use the brand PrimaryRed if available
-                            var hex = "#ED1C24"; // PrimaryRed
+                            // Use the brand TopCoral color globally
+                            var hex = "#FF6B5A"; // TopCoral
                             color = Color.FromArgb(hex);
                         }
                         catch { }

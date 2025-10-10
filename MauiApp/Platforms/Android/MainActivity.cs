@@ -21,8 +21,8 @@ namespace MauiApp
             // Set status bar and navigation bar colors
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {
-                // Set status bar to red color
-                Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
+                // Set status bar to coral color globally
+                Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
                 
                 // Set navigation bar to transparent
                 Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
@@ -84,17 +84,17 @@ namespace MauiApp
         {
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {
-                Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
+                Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
                 
                 // Set it multiple times with delays to ensure it sticks
                 new Handler(Looper.MainLooper).PostDelayed(() =>
                 {
-                    Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
+                    Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
                 }, 50);
                 
                 new Handler(Looper.MainLooper).PostDelayed(() =>
                 {
-                    Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
+                    Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
                 }, 200);
             }
         }

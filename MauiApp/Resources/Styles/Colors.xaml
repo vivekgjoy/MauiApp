@@ -5,8 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <!-- Primary Brand Colors -->
-    <Color x:Key="PrimaryRed">#ED1C24</Color>
-    <Color x:Key="PrimaryRedDark">#C41E3A</Color>
+    <Color x:Key="PrimaryRed">#FF6B5A</Color>
+    <Color x:Key="PrimaryRedDark">#FF6B5A</Color>
     <Color x:Key="PrimaryRedLight">#FF6B6B</Color>
     
     <!-- Coral Orange Colors for Login -->

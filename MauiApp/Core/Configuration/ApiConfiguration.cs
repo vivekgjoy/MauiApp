@@ -18,6 +18,7 @@ namespace MauiApp.Core.Configuration
             public const string Authenticate = "/api/Account/Authenticate";
             public const string RefreshToken = "/api/Account/RefreshToken";
             public const string Logout = "/api/Account/Logout";
+            public const string GetUserInformation = "/api/services/app/userdefaultinformation/GetUserDefaultInformationByUsername";
         }
 
         /// <summary>

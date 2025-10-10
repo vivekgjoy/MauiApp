@@ -327,6 +327,166 @@ namespace MauiApp.Core.Services
         }
 
         /// <summary>
+        /// Gets user information by username
+        /// </summary>
+        public async Task<ApiResponse<UserInformationData>> GetUserInformationAsync(UserInformationRequest request)
+        {
+            try
+            {
+                // Create API request model
+                var apiRequest = new
+                {
+                    UserName = request.UserName
+                };
+
+                var json = JsonSerializer.Serialize(apiRequest, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, ApiConfiguration.ContentTypes.Json);
+
+                System.Diagnostics.Debug.WriteLine($"=== USER INFORMATION API REQUEST ===");
+                System.Diagnostics.Debug.WriteLine($"URL: {ApiConfiguration.BaseUrl}{ApiConfiguration.Endpoints.GetUserInformation}");
+                System.Diagnostics.Debug.WriteLine($"Request Body: {json}");
+                System.Diagnostics.Debug.WriteLine($"=====================================");
+
+                var response = await _httpClient.PostAsync(ApiConfiguration.Endpoints.GetUserInformation, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                System.Diagnostics.Debug.WriteLine($"=== USER INFORMATION API RESPONSE ===");
+                System.Diagnostics.Debug.WriteLine($"Status Code: {response.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"Is Success: {response.IsSuccessStatusCode}");
+                System.Diagnostics.Debug.WriteLine($"Response Content: {responseContent}");
+                System.Diagnostics.Debug.WriteLine($"======================================");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Try to deserialize the API response
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine($"=== ATTEMPTING USER INFO JSON DESERIALIZATION ===");
+                        System.Diagnostics.Debug.WriteLine($"Raw response content: '{responseContent}'");
+                        System.Diagnostics.Debug.WriteLine($"Response content length: {responseContent?.Length ?? 0}");
+                        System.Diagnostics.Debug.WriteLine($"Trying to deserialize as UserInformationResponse");
+                        
+                        var userInfoResponse = JsonSerializer.Deserialize<UserInformationResponse>(responseContent, _jsonOptions);
+                        System.Diagnostics.Debug.WriteLine($"User info response deserialization result: {userInfoResponse != null}");
+                        
+                        if (userInfoResponse != null && userInfoResponse.Success && userInfoResponse.Result != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"=== PARSED USER INFORMATION RESPONSE ===");
+                            System.Diagnostics.Debug.WriteLine($"Success: {userInfoResponse.Success}");
+                            System.Diagnostics.Debug.WriteLine($"User ID: {userInfoResponse.Result.Id}");
+                            System.Diagnostics.Debug.WriteLine($"Username: {userInfoResponse.Result.UserName}");
+                            System.Diagnostics.Debug.WriteLine($"Name: {userInfoResponse.Result.Name}");
+                            System.Diagnostics.Debug.WriteLine($"Surname: {userInfoResponse.Result.Surname}");
+                            System.Diagnostics.Debug.WriteLine($"Email: {userInfoResponse.Result.EmailAddress}");
+                            System.Diagnostics.Debug.WriteLine($"Phone: {userInfoResponse.Result.PhoneNumber}");
+                            System.Diagnostics.Debug.WriteLine($"Is Active: {userInfoResponse.Result.IsActive}");
+                            System.Diagnostics.Debug.WriteLine($"Last Login: {userInfoResponse.Result.LastLoginTime}");
+                            System.Diagnostics.Debug.WriteLine($"Creation Time: {userInfoResponse.Result.CreationTime}");
+                            System.Diagnostics.Debug.WriteLine($"Full Name: {userInfoResponse.Result.FullName}");
+                            System.Diagnostics.Debug.WriteLine($"Display Name: {userInfoResponse.Result.DisplayName}");
+                            System.Diagnostics.Debug.WriteLine($"Department: {userInfoResponse.Result.Department}");
+                            System.Diagnostics.Debug.WriteLine($"Job Title: {userInfoResponse.Result.JobTitle}");
+                            System.Diagnostics.Debug.WriteLine($"Company: {userInfoResponse.Result.Company}");
+                            System.Diagnostics.Debug.WriteLine($"=========================================");
+                            
+                            // Add "viv1" log as requested
+                            System.Diagnostics.Debug.WriteLine($"viv1 - User Information Retrieved Successfully");
+                            System.Diagnostics.Debug.WriteLine($"viv1 - User: {userInfoResponse.Result.UserName} ({userInfoResponse.Result.FullName})");
+                            System.Diagnostics.Debug.WriteLine($"viv1 - Email: {userInfoResponse.Result.EmailAddress}");
+                            System.Diagnostics.Debug.WriteLine($"viv1 - Department: {userInfoResponse.Result.Department}");
+                            System.Diagnostics.Debug.WriteLine($"viv1 - Job Title: {userInfoResponse.Result.JobTitle}");
+                            
+                            return new ApiResponse<UserInformationData>
+                            {
+                                Success = true,
+                                Message = "User information retrieved successfully",
+                                Data = userInfoResponse.Result,
+                                Timestamp = DateTime.UtcNow
+                            };
+                        }
+                        else if (userInfoResponse != null && !userInfoResponse.Success)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"API returned success=false");
+                            System.Diagnostics.Debug.WriteLine($"Error: {userInfoResponse.Error}");
+                            return new ApiResponse<UserInformationData>
+                            {
+                                Success = false,
+                                Message = userInfoResponse.Error ?? "Failed to retrieve user information",
+                                Error = userInfoResponse.Error,
+                                ErrorCode = userInfoResponse.UnAuthorizedRequest ? "UNAUTHORIZED" : "API_ERROR",
+                                Timestamp = DateTime.UtcNow
+                            };
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"User info JSON deserialization error: {jsonEx.Message}");
+                    }
+
+                    return new ApiResponse<UserInformationData>
+                    {
+                        Success = false,
+                        Message = "Invalid response format from server",
+                        Error = "INVALID_RESPONSE_FORMAT",
+                        ErrorCode = ApiConfiguration.ErrorCodes.ServerError,
+                        Timestamp = DateTime.UtcNow
+                    };
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"=== USER INFO API ERROR RESPONSE ===");
+                    System.Diagnostics.Debug.WriteLine($"Status Code: {response.StatusCode}");
+                    System.Diagnostics.Debug.WriteLine($"Error Content: {responseContent}");
+                    System.Diagnostics.Debug.WriteLine($"===================================");
+                    return await HandleErrorResponse<UserInformationData>(response, responseContent);
+                }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"=== USER INFO HTTP REQUEST ERROR ===");
+                System.Diagnostics.Debug.WriteLine($"Error: {httpEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {httpEx.InnerException?.Message}");
+                System.Diagnostics.Debug.WriteLine($"=====================================");
+                return new ApiResponse<UserInformationData>
+                {
+                    Success = false,
+                    Message = "Network error occurred. Please check your internet connection.",
+                    Error = httpEx.Message,
+                    ErrorCode = ApiConfiguration.ErrorCodes.NetworkError,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+            catch (TaskCanceledException tcEx) when (tcEx.InnerException is TimeoutException)
+            {
+                System.Diagnostics.Debug.WriteLine($"User Info Timeout Error: {tcEx.Message}");
+                return new ApiResponse<UserInformationData>
+                {
+                    Success = false,
+                    Message = "Request timed out. Please try again.",
+                    Error = tcEx.Message,
+                    ErrorCode = ApiConfiguration.ErrorCodes.TimeoutError,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"=== USER INFO UNEXPECTED ERROR ===");
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"===================================");
+                return new ApiResponse<UserInformationData>
+                {
+                    Success = false,
+                    Message = "An unexpected error occurred. Please try again.",
+                    Error = ex.Message,
+                    ErrorCode = ApiConfiguration.ErrorCodes.UnknownError,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
         /// Sets the authorization header for subsequent requests
         /// </summary>
         public void SetAuthorizationHeader(string token)

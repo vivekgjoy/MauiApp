@@ -140,7 +140,7 @@ public partial class ImageCommentPage : ContentPage
             }
 
             // Navigate back to AddReportPage
-            await Shell.Current.GoToAsync("///AddReportPage");
+            await Shell.Current.GoToAsync(nameof(AddReportPage));
         }
         catch (Exception ex)
         {

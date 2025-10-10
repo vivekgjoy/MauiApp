@@ -5,6 +5,7 @@ namespace MauiApp.ViewModels;
 public class ImageSourceSelectionViewModel : BaseViewModel
 {
     private string? _selectedSource;
+    public event EventHandler<string>? SourceSelected;
 
     public string? SelectedSource
     {
@@ -31,6 +32,7 @@ public class ImageSourceSelectionViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("Gallery selected");
             SelectedSource = "Gallery";
+            SourceSelected?.Invoke(this, "Gallery");
             await Dismiss();
         }
         catch (Exception ex)
@@ -45,6 +47,7 @@ public class ImageSourceSelectionViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("Camera selected");
             SelectedSource = "Camera";
+            SourceSelected?.Invoke(this, "Camera");
             await Dismiss();
         }
         catch (Exception ex)

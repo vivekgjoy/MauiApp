@@ -29,6 +29,13 @@ namespace MauiApp.Core.Interfaces
         Task<ApiResponse<object>> LogoutAsync(string token);
 
         /// <summary>
+        /// Gets user information by username
+        /// </summary>
+        /// <param name="request">User information request</param>
+        /// <returns>API response with user information data</returns>
+        Task<ApiResponse<UserInformationData>> GetUserInformationAsync(UserInformationRequest request);
+
+        /// <summary>
         /// Sets the authorization header for subsequent requests
         /// </summary>
         /// <param name="token">Access token</param>

@@ -69,7 +69,24 @@ public partial class ReportsHistoryPage : ContentPage
 
     private async Task OnBackClicked()
     {
-        await Navigation.PopAsync();
+        try
+        {
+            // Use Shell navigation since all pages are registered as Shell routes
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Fallback to main page if navigation fails
+            try
+            {
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+            catch
+            {
+                // Last resort - just go back to main page
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+        }
     }
 
     private async Task LoadReports()
@@ -151,14 +168,31 @@ public partial class ReportsHistoryPage : ContentPage
 
     private async void OnBackButtonClicked(object sender, EventArgs e)
     {
-        await Navigation.PopAsync();
+        try
+        {
+            // Use Shell navigation since all pages are registered as Shell routes
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Fallback to main page if navigation fails
+            try
+            {
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+            catch
+            {
+                // Last resort - just go back to main page
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+        }
     }
 
     private async void OnGenerateNewReportClicked(object sender, EventArgs e)
     {
         try
         {
-            await Navigation.PushAsync(new AddReportPage());
+            await Shell.Current.GoToAsync(nameof(AddReportPage));
         }
         catch (Exception ex)
         {

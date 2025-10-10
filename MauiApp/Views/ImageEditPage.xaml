@@ -24,11 +24,11 @@
 
             <!-- Top Bar -->
             <Grid Grid.Row="0"
-                  BackgroundColor="{StaticResource TopCoral}"
-                  HeightRequest="70"
-                  Padding="12,40,12,12"
-                  HorizontalOptions="FillAndExpand"
-                  VerticalOptions="Start">
+      BackgroundColor="{StaticResource TopCoral}"
+      Padding="{OnPlatform iOS='12,50,12,12', Android='12,55,12,12', WinUI='12,40,12,12'}"
+      HorizontalOptions="FillAndExpand"
+      VerticalOptions="Start">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -36,19 +36,23 @@
                 </Grid.ColumnDefinitions>
 
                 <ImageButton Source="ic_back.png"
-                             BackgroundColor="Transparent"
-                             WidthRequest="28"
-                             HeightRequest="28"
-                             Clicked="OnBackClicked" />
+                 BackgroundColor="Transparent"
+                 WidthRequest="28"
+                 HeightRequest="28"
+                 Clicked="OnBackClicked" />
 
                 <Label Grid.Column="1"
-                       Text="Edit Image"
-                       TextColor="White"
-                       FontSize="18"
-                       VerticalOptions="Center"
-                       HorizontalOptions="Center" />
+           Text="Edit Image"
+           TextColor="White"
+           FontSize="18"
+           FontAttributes="Bold"
+           VerticalOptions="Center"
+           HorizontalOptions="Center" />
 
-                <BoxView Grid.Column="2" WidthRequest="28" HeightRequest="28" BackgroundColor="Transparent"/>
+                <BoxView Grid.Column="2"
+             WidthRequest="28"
+             HeightRequest="28"
+             BackgroundColor="Transparent"/>
             </Grid>
 
             <!-- Canvas Area -->
@@ -103,11 +107,11 @@
                                 CornerRadius="8" WidthRequest="44"/>
                         <BoxView Grid.Column="2"/>
                         <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BackgroundColor="Transparent" TextColor="White"
                                 BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BackgroundColor="Transparent" TextColor="White"
                                 BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
                     </Grid>

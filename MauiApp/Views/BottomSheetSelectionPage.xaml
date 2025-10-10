@@ -17,10 +17,9 @@
                                       NumberOfTapsRequired="1" />
             </BoxView.GestureRecognizers>
         </BoxView>
-        
+
         <!-- Bottom Sheet -->
         <Border x:Name="Sheet" 
-                BackgroundColor="#EF5C5C" 
                 StrokeShape="RoundRectangle 16,16,0,0" 
                 VerticalOptions="End" 
                 HorizontalOptions="FillAndExpand" 
@@ -29,11 +28,20 @@
                 HeightRequest="450"
                 MaximumHeightRequest="600"
                 StrokeThickness="0">
+
+            <!-- ✅ Vertical Gradient Background (same as LoginPage) -->
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+
             <Border.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnPanUpdated" />
                 <TapGestureRecognizer Tapped="OnSheetTapped" />
             </Border.GestureRecognizers>
-            
+
             <Grid RowDefinitions="Auto,Auto,Auto,*">
                 <!-- Drag Handle -->
                 <BoxView Grid.Row="0" 
@@ -42,7 +50,7 @@
                          HeightRequest="4" 
                          HorizontalOptions="Center" 
                          Margin="0,12,0,8" />
-                
+
                 <!-- Header -->
                 <Grid Grid.Row="1" Padding="24,8,24,16">
                     <!-- Title - Centered -->
@@ -53,7 +61,7 @@
                            VerticalOptions="Center"
                            HorizontalOptions="Center" />
                 </Grid>
-                
+
                 <!-- Search Bar -->
                 <Border Grid.Row="2" 
                         Stroke="{StaticResource Gray300}" 
@@ -71,11 +79,11 @@
                                BackgroundColor="Transparent"
                                FontSize="16" />
                 </Border>
-                
+
                 <!-- Items List -->
                 <ScrollView Grid.Row="3" 
-                           VerticalOptions="FillAndExpand"
-                           Margin="0,0,0,24">
+                            VerticalOptions="FillAndExpand"
+                            Margin="0,0,0,24">
                     <Border Margin="24,0,24,0" 
                             BackgroundColor="{StaticResource White}" 
                             Stroke="{StaticResource Gray200}" 
@@ -84,44 +92,46 @@
                         <CollectionView ItemsSource="{Binding FilteredItems}" 
                                         BackgroundColor="Transparent" 
                                         SelectionMode="None">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Padding="16,16" ColumnDefinitions="*,Auto">
-                                    <Grid.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCommand}" CommandParameter="{Binding Item}" />
-                                    </Grid.GestureRecognizers>
-                                    
-                                    <!-- Tenant Info -->
-                                    <StackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="{Binding DisplayText}" 
-                                               FontSize="16" 
-                                               TextColor="{StaticResource TextPrimary}" 
-                                               VerticalOptions="Center" />
-                                        <Label Text="{Binding Description}" 
-                                               FontSize="14" 
-                                               TextColor="{StaticResource TextHint}" 
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="16,16" ColumnDefinitions="*,Auto">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCommand}" 
+                                                CommandParameter="{Binding Item}" />
+                                        </Grid.GestureRecognizers>
+
+                                        <!-- Tenant Info -->
+                                        <StackLayout Grid.Column="0" Spacing="4">
+                                            <Label Text="{Binding DisplayText}" 
+                                                   FontSize="16" 
+                                                   TextColor="{StaticResource TextPrimary}" 
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding Description}" 
+                                                   FontSize="14" 
+                                                   TextColor="{StaticResource TextHint}" 
+                                                   VerticalOptions="Center"
+                                                   IsVisible="{Binding Description, Converter={StaticResource IsNotNullConverter}}" />
+                                        </StackLayout>
+
+                                        <!-- Selection Indicator -->
+                                        <Label Grid.Column="1" 
+                                               Text="✓" 
+                                               FontSize="18" 
+                                               TextColor="{StaticResource White}"
                                                VerticalOptions="Center"
-                                               IsVisible="{Binding Description, Converter={StaticResource IsNotNullConverter}}" />
-                                    </StackLayout>
-                                    
-                                    <!-- Selection Indicator -->
-                                    <Label Grid.Column="1" 
-                                           Text="✓" 
-                                           FontSize="18" 
-                                           TextColor="{StaticResource PrimaryRed}"
-                                           VerticalOptions="Center"
-                                           HorizontalOptions="End"
-                                           IsVisible="{Binding IsSelected}" />
-                                    
-                                    <!-- Divider Line -->
-                                    <BoxView Grid.ColumnSpan="2" 
-                                             BackgroundColor="{StaticResource Gray200}" 
-                                             HeightRequest="1" 
-                                             VerticalOptions="End" 
-                                             Margin="0,0,0,0" />
-                                </Grid>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
+                                               HorizontalOptions="End"
+                                               IsVisible="{Binding IsSelected}" />
+
+                                        <!-- Divider Line -->
+                                        <BoxView Grid.ColumnSpan="2" 
+                                                 BackgroundColor="{StaticResource Gray200}" 
+                                                 HeightRequest="1" 
+                                                 VerticalOptions="End" 
+                                                 Margin="0,0,0,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
                         </CollectionView>
                     </Border>
                 </ScrollView>

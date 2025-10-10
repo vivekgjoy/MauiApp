@@ -17,7 +17,7 @@
 
     <Style x:Key="SecondaryButton" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource BackgroundCard}" />
-        <Setter Property="TextColor" Value="{StaticResource PrimaryRed}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeMedium}" />
         <Setter Property="FontFamily" Value="{StaticResource FontFamilySemibold}" />
         <Setter Property="CornerRadius" Value="8" />

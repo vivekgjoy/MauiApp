@@ -2,7 +2,7 @@
 <ContentPage x:Class="MauiApp.Views.ImageSourceSelectionPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             BackgroundColor="Transparent"
+             BackgroundColor="{StaticResource TopCoral}"
              Title="">
 
     <Grid>
@@ -20,7 +20,7 @@
         
         <!-- Bottom Sheet -->
         <Border x:Name="Sheet" 
-                BackgroundColor="#ED1C24" 
+                BackgroundColor="{StaticResource TopCoral}" 
                 StrokeShape="RoundRectangle 16,16,0,0" 
                 VerticalOptions="End" 
                 HorizontalOptions="FillAndExpand" 

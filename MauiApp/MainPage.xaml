@@ -34,15 +34,15 @@
             <StackLayout Spacing="20" Padding="20">
 
                 <!-- Welcome Header -->
-                <Frame Style="{StaticResource CardElevated}" Background="{StaticResource TopCoral}">
+                <Frame Style="{StaticResource CardElevated}" Background="{StaticResource White}">
                     <StackLayout Spacing="10">
                         <Label Text="Welcome to SmartERP"
                                Style="{StaticResource TextH2}"
-                               TextColor="{StaticResource White}"
+                               TextColor="{StaticResource TextPrimary}"
                                HorizontalOptions="Center" />
                         <Label Text="Enterprise Solutions Dashboard"
                                Style="{StaticResource TextBody}"
-                               TextColor="{StaticResource White}"
+                               TextColor="{StaticResource TextPrimary}"
                                HorizontalOptions="Center"
                                Opacity="0.9" />
                     </StackLayout>

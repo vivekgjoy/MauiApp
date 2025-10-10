@@ -1,5 +1,6 @@
 using MauiApp.Core.Interfaces;
 using MauiApp.Core.Services;
+using MauiApp.ViewModels;
 using MauiApp.Core.Models;
 
 namespace MauiApp.Views;
@@ -36,11 +37,7 @@ public partial class AddReportPage : ContentPage
             var activity = Platform.CurrentActivity;
             if (activity != null)
             {
-                // Set status bar to red and make it light content (white text/icons)
-                activity.Window?.SetStatusBarColor(Android.Graphics.Color.ParseColor("#E50000")); // PrimaryRed
-                activity.Window?.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#E50000")); // PrimaryRed
-                
-                // Make status bar content light (white text/icons) - using compatible API
+                // Status bar color is now set globally, just ensure light content (white text/icons)
                 if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.M)
                 {
                     var decorView = activity.Window?.DecorView;
@@ -59,7 +56,7 @@ public partial class AddReportPage : ContentPage
                     {
                         actionBar.SetDisplayHomeAsUpEnabled(true);
                         actionBar.SetHomeButtonEnabled(true);
-                        actionBar.SetBackgroundDrawable(new Android.Graphics.Drawables.ColorDrawable(Android.Graphics.Color.ParseColor("#E50000")));
+                        // Action bar color is now handled globally
                     }
                 }
             }
@@ -77,15 +74,18 @@ public partial class AddReportPage : ContentPage
                 return;
             }
 
-            // Create bottom sheet options
-            var options = new List<string> { "Gallery", "Camera" };
-
-            var selectedOption = await _bottomSheetService.ShowSelectionAsync("Select Image Source", options);
-
-            if (selectedOption != null)
+            // Show dedicated image source selection bottom sheet
+            var imageSourcePage = new ImageSourceSelectionPage();
+            var viewModel = new ImageSourceSelectionViewModel();
+            imageSourcePage.BindingContext = viewModel;
+            
+            // Subscribe to the source selected event
+            viewModel.SourceSelected += async (sender, selectedSource) =>
             {
-                await HandleImageSelection(selectedOption);
-            }
+                await HandleImageSelection(selectedSource);
+            };
+            
+            await Navigation.PushModalAsync(imageSourcePage);
         }
         catch (Exception ex)
         {
@@ -247,12 +247,46 @@ public partial class AddReportPage : ContentPage
 
     private async void OnBackClicked(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("..");
+        try
+        {
+            // Use Shell navigation since all pages are registered as Shell routes
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Fallback to main page if navigation fails
+            try
+            {
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+            catch
+            {
+                // Last resort - just go back to main page
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+        }
     }
 
     private async void OnCancelClicked(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("..");
+        try
+        {
+            // Use Shell navigation since all pages are registered as Shell routes
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Fallback to main page if navigation fails
+            try
+            {
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+            catch
+            {
+                // Last resort - just go back to main page
+                await Shell.Current.GoToAsync("//MainPage");
+            }
+        }
     }
 
     private async void OnGenerateReportClicked(object sender, EventArgs e)
@@ -284,7 +318,7 @@ public partial class AddReportPage : ContentPage
             await ShowProgressLoader("Preparing report preview...");
 
             // Navigate to PDF preview page
-            await Shell.Current.GoToAsync("//PDFPreviewPage");
+            await Shell.Current.GoToAsync(nameof(PDFPreviewPage));
         }
         catch (Exception ex)
         {
