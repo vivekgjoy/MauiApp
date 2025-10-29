@@ -95,6 +95,9 @@
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\icon_biometric.svg" Resize="True" BaseSize="32,32" />
 		<MauiImage Include="Resources\Images\ic_arrow_back.svg" Resize="True" BaseSize="28,28" />
+		<MauiImage Include="Resources\Images\ic_pdf_icon.png" />
+		<MauiImage Include="Resources\Images\ic_eye_icon.png" />
+		<MauiImage Include="Resources\Images\ic_share_icon.png" />
 		
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />

@@ -45,10 +45,10 @@ public partial class ImageCommentPage : ContentPage
     {
         InitializeComponent();
         _reportImageService = ServiceHelper.GetService<IReportImageService>();
-        
+
         // Set up navigation bar back command
         //NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
-        
+
         // Handle safe area for status bar
         this.Loaded += OnPageLoaded;
     }
@@ -91,6 +91,42 @@ public partial class ImageCommentPage : ContentPage
 
     private async Task OnBackClicked()
     {
+        await HandleBackNavigation();
+    }
+
+    private async void OnBackButtonClicked(object sender, EventArgs e)
+    {
+        await HandleBackNavigation();
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        // Handle hardware back button
+        Device.BeginInvokeOnMainThread(async () =>
+        {
+            await HandleBackNavigation();
+        });
+        return true; // Prevent default back behavior
+    }
+
+    private async Task HandleBackNavigation()
+    {
+        // Check if there are any unsaved changes (comment text)
+        if (!string.IsNullOrEmpty(CommentEditor.Text?.Trim()))
+        {
+            var result = await DisplayAlert(
+                "Unsaved Changes", 
+                "You have unsaved changes. Are you sure you want to go back? You will lose your comment.", 
+                "Yes, Go Back", 
+                "Cancel");
+            
+            if (!result)
+            {
+                return; // User cancelled, stay on current page
+            }
+        }
+        
+        // Navigate back
         await Navigation.PopAsync();
     }
 
@@ -132,15 +168,17 @@ public partial class ImageCommentPage : ContentPage
                 };
 
                 System.Diagnostics.Debug.WriteLine($"Adding new image to service: {_imagePath}, Comment: {reportImage.Comment}");
-                
+
                 // Add to the shared collection
                 _reportImageService.AddImage(reportImage);
-                
+
                 System.Diagnostics.Debug.WriteLine($"Image added. Total images in service: {_reportImageService.ReportImages.Count}");
             }
 
             // Navigate back to AddReportPage
-            await Shell.Current.GoToAsync(nameof(AddReportPage));
+            // Use relative navigation to go back to the original AddReportPage
+            System.Diagnostics.Debug.WriteLine("ImageCommentPage: Navigating back to AddReportPage");
+            await Shell.Current.GoToAsync("../AddReportPage");
         }
         catch (Exception ex)
         {

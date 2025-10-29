@@ -1,435 +1,332 @@
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using MauiApp.Core.Models;
 using MauiApp.Core.Interfaces;
 using MauiApp.Core.Services;
-using MauiApp.Core.Models;
-using Microsoft.Maui.Platform;
-#if ANDROID
-using AndroidX.AppCompat.App;
-using Android.OS;
-using Android.Graphics;
-#endif
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 
-namespace MauiApp.Views;
+using MauiColor = Microsoft.Maui.Graphics.Color; // ? Fix for Color ambiguity
 
-public partial class PDFPreviewPage : ContentPage
+namespace MauiApp.Views
 {
-    private readonly IReportImageService _reportImageService;
-    private readonly IPDFGeneratorService _pdfGeneratorService;
-    private readonly IReportStorageService _reportStorageService;
-    private int _imagesPerPage = 2;
-    private List<ReportImage> _images = new();
-
-    public PDFPreviewPage()
+    public partial class PDFPreviewPage : ContentPage
     {
-        try
+        private readonly List<ReportImage> _reportImages;
+        private int _imagesPerPage = 6; // 2x3 grid
+        private readonly IReportImageService _reportImageService;
+        private readonly IPDFGeneratorService _pdfGeneratorService;
+
+        public PDFPreviewPage()
         {
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage constructor started");
-            
             InitializeComponent();
-            System.Diagnostics.Debug.WriteLine("InitializeComponent completed");
-            
-            // Initialize services
             _reportImageService = ServiceHelper.GetService<IReportImageService>();
             _pdfGeneratorService = ServiceHelper.GetService<IPDFGeneratorService>();
-            _reportStorageService = ServiceHelper.GetService<IReportStorageService>();
-
-            System.Diagnostics.Debug.WriteLine("All services initialized successfully");
-
-            // Handle safe area for status bar
-            this.Loaded += OnPageLoaded;
-
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage constructor completed successfully");
+            _reportImages = _reportImageService.ReportImages.ToList();
+            BuildPreviewPages();
+            UpdateUI();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Critical error in PDFPreviewPage constructor: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-            
-            // Show error on page
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                Content = new Label
-                {
-                    Text = $"Error loading page: {ex.Message}",
-                    TextColor = Colors.Red,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center
-                };
-            });
-        }
-    }
 
-    protected override async void OnAppearing()
-    {
-        try
+        private void BuildPreviewPages()
         {
-            base.OnAppearing();
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage OnAppearing started");
-            
-            // Initialize the page
-            ImagesPerPageLabel.Text = _imagesPerPage.ToString();
-            
-            // Load and display images
-            LoadImages();
-            UpdatePreview();
-            
-            System.Diagnostics.Debug.WriteLine("PDFPreviewPage OnAppearing completed successfully");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in OnAppearing: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-            await DisplayAlert("Error", $"Failed to load preview: {ex.Message}", "OK");
-        }
-    }
+            if (PreviewContainer == null) return;
 
-#if ANDROID
-    private void OnPageLoaded(object sender, EventArgs e)
-    {
-        if (DeviceInfo.Platform == DevicePlatform.Android)
-        {
-            var activity = Platform.CurrentActivity as AppCompatActivity;
-            if (activity != null && Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
-            {
-                activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
-            }
-        }
-    }
-#else
-    private void OnPageLoaded(object sender, EventArgs e) { }
-#endif
-
-    private async void OnBackButtonClicked(object sender, EventArgs e)
-    {
-        try
-        {
-            await Navigation.PopAsync();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error navigating back: {ex.Message}");
-            await DisplayAlert("Error", "Unable to navigate back.", "OK");
-        }
-    }
-
-    private async Task OnBackClicked()
-    {
-        await Navigation.PopAsync();
-    }
-
-    private void LoadImages()
-    {
-        try
-        {
-            System.Diagnostics.Debug.WriteLine("LoadImages method started");
-            
-            _images = _reportImageService.ReportImages.ToList();
-            TotalImagesLabel.Text = $"Total Images: {_images.Count}";
-            
-            System.Diagnostics.Debug.WriteLine($"Loaded {_images.Count} images from service");
-            foreach (var img in _images)
-            {
-                System.Diagnostics.Debug.WriteLine($"Image: {img.ImagePath}, Comment: {img.Comment}, ID: {img.Id}");
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading images: {ex.Message}");
-            _images = new List<ReportImage>();
-            TotalImagesLabel.Text = "Error loading images";
-        }
-    }
-
-    private void OnDecreaseImagesPerPage(object sender, EventArgs e)
-    {
-        if (_imagesPerPage > 1)
-        {
-            _imagesPerPage--;
-            ImagesPerPageLabel.Text = _imagesPerPage.ToString();
-            UpdatePreview();
-        }
-    }
-
-    private void OnIncreaseImagesPerPage(object sender, EventArgs e)
-    {
-        if (_imagesPerPage < 10)
-        {
-            _imagesPerPage++;
-            ImagesPerPageLabel.Text = _imagesPerPage.ToString();
-            UpdatePreview();
-        }
-    }
-
-    private void UpdatePreview()
-    {
-        try
-        {
+            // Clear existing pages
             PreviewContainer.Children.Clear();
-            System.Diagnostics.Debug.WriteLine($"UpdatePreview called - Images count: {_images.Count}");
 
-            if (_images.Count == 0)
+            int totalPages = (int)Math.Ceiling((double)_reportImages.Count / _imagesPerPage);
+            for (int i = 0; i < totalPages; i++)
             {
-                var noImagesFrame = new Frame
-                {
-                    BackgroundColor = Colors.White,
-                    CornerRadius = 8,
-                    Padding = 20,
-                    HasShadow = true
-                };
+                var imagesForPage = _reportImages
+                    .Skip(i * _imagesPerPage)
+                    .Take(_imagesPerPage)
+                    .ToList();
 
-                var noImagesLabel = new Label
-                {
-                    Text = "No images found.\nPlease add images in the previous page.",
-                    FontSize = 16,
-                    TextColor = Colors.Gray,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalTextAlignment = TextAlignment.Center
-                };
-
-                noImagesFrame.Content = noImagesLabel;
-                PreviewContainer.Children.Add(noImagesFrame);
-                return;
-            }
-
-            var totalPages = (int)Math.Ceiling((double)_images.Count / _imagesPerPage);
-            System.Diagnostics.Debug.WriteLine($"Creating {totalPages} pages with {_imagesPerPage} images per page");
-
-            for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
-            {
-                var pageImages = _images.Skip(pageIndex * _imagesPerPage).Take(_imagesPerPage).ToList();
-                var pagePreview = CreatePagePreview(pageIndex + 1, pageImages);
-                PreviewContainer.Children.Add(pagePreview);
+                var pageView = CreatePagePreview(i + 1, imagesForPage);
+                PreviewContainer.Children.Add(pageView);
             }
         }
-        catch (Exception ex)
+
+        // ?? PAGE PREVIEW LAYOUT (Header + 2x3 Grid + Footer)
+        private Frame CreatePagePreview(int pageNumber, List<ReportImage> images)
         {
-            System.Diagnostics.Debug.WriteLine($"Error in UpdatePreview: {ex.Message}");
-            var errorFrame = new Frame
+            var pageFrame = new Frame
             {
                 BackgroundColor = Colors.White,
+                BorderColor = Colors.LightGray,
                 CornerRadius = 8,
-                Padding = 20,
-                HasShadow = true
+                Padding = 0,
+                HasShadow = true,
+                Margin = new Thickness(0, 0, 0, 20)
             };
 
-            var errorLabel = new Label
+            var pageContainer = new Grid
             {
-                Text = $"Error: {ex.Message}",
-                FontSize = 14,
-                TextColor = Colors.Red,
+                RowDefinitions =
+                {
+                    new RowDefinition { Height = GridLength.Auto }, // Header
+                    new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }, // Image grid
+                    new RowDefinition { Height = GridLength.Auto }  // Footer
+                },
+                Padding = new Thickness(20)
+            };
+
+            // ?? HEADER SECTION
+            var headerLayout = new VerticalStackLayout
+            {
+                Spacing = 2,
+                HorizontalOptions = LayoutOptions.Fill
+            };
+
+            headerLayout.Children.Add(new Label
+            {
+                Text = "EXTERNAL VISUAL INSPECTION PHOTOS",
+                FontSize = 16,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = MauiColor.FromArgb("#ED1C24"),
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            headerLayout.Children.Add(new Label
+            {
+                Text = "FOTOS DE INSPECCI�N VISUAL EXTERNA",
+                FontSize = 12,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Colors.Black,
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            headerLayout.Children.Add(new Label
+            {
+                Text = $"Report Number � AT/IVI/VM34/002/{pageNumber:D2}",
+                FontSize = 11,
+                TextColor = Colors.Black,
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            headerLayout.Children.Add(new Label
+            {
+                Text = "INSPECTION PERIOD: 22/3/2021 � 16/4/2021",
+                FontSize = 11,
+                TextColor = MauiColor.FromArgb("#ED1C24"),
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            pageContainer.Add(headerLayout, 0, 0);
+
+            // ?? IMAGES GRID (2x3)
+            var imageGrid = new Grid
+            {
+                RowSpacing = 10,
+                ColumnSpacing = 10
+            };
+
+            // 3 rows � 2 columns
+            for (int i = 0; i < 3; i++)
+                imageGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            for (int j = 0; j < 2; j++)
+                imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            for (int i = 0; i < images.Count && i < 6; i++)
+            {
+                var row = i / 2;
+                var col = i % 2;
+                imageGrid.Add(CreateImageBlock(images[i], i + 1), col, row);
+            }
+
+            pageContainer.Add(imageGrid, 0, 1);
+
+            // ?? FOOTER SECTION
+            var footerLayout = new VerticalStackLayout
+            {
+                Spacing = 2,
                 HorizontalOptions = LayoutOptions.Center
             };
 
-            errorFrame.Content = errorLabel;
-            PreviewContainer.Children.Add(errorFrame);
-        }
-    }
-
-    private Frame CreatePagePreview(int pageNumber, List<ReportImage> images)
-    {
-        // Main page frame with A4-like proportions
-        var pageFrame = new Frame
-        {
-            BackgroundColor = Colors.White,
-            BorderColor = Colors.LightGray,
-            CornerRadius = 8,
-            Padding = 0,
-            HasShadow = true,
-            Margin = new Thickness(0, 0, 0, 20),
-            HeightRequest = 400 // Fixed height for consistent preview
-        };
-
-        // Page container with margins (simulating printable area)
-        var pageContainer = new Grid
-        {
-            Padding = new Thickness(20, 30, 20, 30), // Top, bottom, left, right margins
-            RowDefinitions = new RowDefinitionCollection
+            footerLayout.Children.Add(new Label
             {
-                new RowDefinition { Height = GridLength.Auto }, // Page header
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }, // Images area
-                new RowDefinition { Height = GridLength.Auto } // Page footer
-            }
-        };
+                Text = "A-STAR TESTING & INSPECTION (S) PTE LTD",
+                FontSize = 11,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = MauiColor.FromArgb("#ED1C24"),
+                HorizontalOptions = LayoutOptions.Center
+            });
 
-        // Page header with margin guidelines
-        var headerFrame = new Frame
-        {
-            BackgroundColor = Colors.LightGray,
-            CornerRadius = 4,
-            Padding = new Thickness(10, 5),
-            HasShadow = false
-        };
-
-        var pageHeader = new Label
-        {
-            Text = $"Page {pageNumber}",
-            FontSize = 14,
-            FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.DarkGray,
-            HorizontalOptions = LayoutOptions.Center
-        };
-
-        headerFrame.Content = pageHeader;
-        pageContainer.Add(headerFrame, 0, 0);
-
-        // Images area with margin guidelines
-        var imagesArea = CreateImagesArea(images);
-        pageContainer.Add(imagesArea, 0, 1);
-
-        // Page footer with margin guidelines
-        var footerFrame = new Frame
-        {
-            BackgroundColor = Colors.LightGray,
-            CornerRadius = 4,
-            Padding = new Thickness(10, 5),
-            HasShadow = false
-        };
-
-        var pageFooter = new Label
-        {
-            Text = $"Images: {images.Count}",
-            FontSize = 12,
-            TextColor = Colors.DarkGray,
-            HorizontalOptions = LayoutOptions.Center
-        };
-
-        footerFrame.Content = pageFooter;
-        pageContainer.Add(footerFrame, 0, 2);
-
-        pageFrame.Content = pageContainer;
-        return pageFrame;
-    }
-
-    private Grid CreateImagesArea(List<ReportImage> images)
-    {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitionCollection
+            footerLayout.Children.Add(new Label
             {
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                new ColumnDefinition { Width = new GridLength(10) }, // Spacing between images
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-            },
-            RowDefinitions = new RowDefinitionCollection
-            {
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            }
-        };
+                Text = "No.05, Soon Lee Street | Pioneer Point #03-35/37 | Singapore 627607",
+                FontSize = 10,
+                TextColor = Colors.Black,
+                HorizontalOptions = LayoutOptions.Center
+            });
 
-        // Add images to grid (2 images per page)
-        for (int i = 0; i < images.Count && i < 2; i++)
-        {
-            var image = images[i];
-            var imageFrame = CreateImageFrame(image);
-            
-            var col = i * 2; // 0 or 2 (skipping the middle spacing column)
-            grid.Add(imageFrame, col, 0);
+            footerLayout.Children.Add(new Label
+            {
+                Text = "Tel: (65)62611662 / 91835902 | Fax: (65)62611663 | Web: www.astartesting.com.sg",
+                FontSize = 10,
+                TextColor = Colors.Gray,
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            pageContainer.Add(footerLayout, 0, 2);
+            pageFrame.Content = pageContainer;
+            return pageFrame;
         }
 
-        return grid;
-    }
-
-    private Frame CreateImageFrame(ReportImage reportImage)
-    {
-        var imageFrame = new Frame
+        // ?? INDIVIDUAL IMAGE BLOCK (Label + Image + Caption)
+        private Frame CreateImageBlock(ReportImage reportImage, int index)
         {
-            BackgroundColor = Colors.White,
-            BorderColor = Colors.LightGray,
-            CornerRadius = 4,
-            Padding = 8,
-            HasShadow = true,
-            Margin = new Thickness(2)
-        };
-
-        var imageContainer = new StackLayout
-        {
-            Spacing = 8
-        };
-
-        // Image with proper aspect ratio
-        var image = new Image
-        {
-            Source = ImageSource.FromFile(reportImage.ImagePath),
-            Aspect = Aspect.AspectFit,
-            BackgroundColor = Colors.LightGray,
-            HeightRequest = 150 // Fixed height for consistent preview
-        };
-
-        imageContainer.Children.Add(image);
-
-        // Add comment if available
-        if (!string.IsNullOrEmpty(reportImage.Comment))
-        {
-            var commentLabel = new Label
+            var block = new Frame
             {
-                Text = reportImage.Comment,
-                FontSize = 12,
-                TextColor = Colors.DarkGray,
-                MaxLines = 2,
-                LineBreakMode = LineBreakMode.TailTruncation,
-                HorizontalOptions = LayoutOptions.Center,
-                HorizontalTextAlignment = TextAlignment.Center
+                BorderColor = Colors.LightGray,
+                CornerRadius = 4,
+                Padding = 6,
+                HasShadow = true
             };
-            imageContainer.Children.Add(commentLabel);
-        }
 
-        imageFrame.Content = imageContainer;
-        return imageFrame;
-    }
-
-
-    private async void OnGeneratePDFClicked(object sender, EventArgs e)
-    {
-        if (_images.Count == 0)
-        {
-            await DisplayAlert("No Images", "Please add some images before generating PDF.", "OK");
-            return;
-        }
-
-        try
-        {
-            ShowProgress(true, "Publishing PDF...");
-            
-            // Log PDF generation start
-            System.Diagnostics.Debug.WriteLine($"PDF Generation Started - Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}");
-            
-            var pdfPath = await _pdfGeneratorService.GeneratePDFAsync(_images, _imagesPerPage);
-            
-            ShowProgress(false);
-            
-            if (!string.IsNullOrEmpty(pdfPath))
+            var stack = new VerticalStackLayout
             {
-                // Save to reports storage
-                var savedPath = await _reportStorageService.SaveReportAsync(pdfPath, _images.Count, _imagesPerPage);
-                
-                // Log successful PDF generation
-                System.Diagnostics.Debug.WriteLine($"PDF Generation Success - Path: {savedPath}, Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}");
-                await DisplayAlert("Success", $"PDF published successfully!\nYour report has been saved and is available in Reports History.", "OK");
-                
-                // Navigate back to main page
-                await Shell.Current.GoToAsync("//MainPage");
-            }
-            else
-            {
-                // Log PDF generation failure
-                System.Diagnostics.Debug.WriteLine($"PDF Generation Failed - Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}");
-                await DisplayAlert("Error", "Failed to generate PDF. Please try again.", "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowProgress(false);
-            // Log PDF generation error
-            System.Diagnostics.Debug.WriteLine($"PDF Generation Error - Images: {_images.Count}, ImagesPerPage: {_imagesPerPage}, Error: {ex.Message}");
-            await DisplayAlert("Error", $"Failed to generate PDF: {ex.Message}", "OK");
-        }
-    }
+                Spacing = 4
+            };
 
-    private void ShowProgress(bool show, string message = "Processing...")
-    {
-        ProgressOverlay.IsVisible = show;
-        ProgressIndicator.IsRunning = show;
-        ProgressLabel.Text = message;
-        GeneratePDFButton.IsEnabled = !show;
+            // Label above image (like �001.A�)
+            stack.Children.Add(new Label
+            {
+                Text = $"001.{(char)('A' + index - 1)}",
+                FontSize = 11,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Colors.Black,
+                HorizontalOptions = LayoutOptions.Center
+            });
+
+            // Image itself
+            stack.Children.Add(new Image
+            {
+                Source = ImageSource.FromFile(reportImage.ImagePath),
+                Aspect = Aspect.AspectFill,
+                HeightRequest = 120,
+                WidthRequest = 160,
+                BackgroundColor = Colors.LightGray
+            });
+
+            // Optional comment/caption
+            if (!string.IsNullOrEmpty(reportImage.Comment))
+            {
+                stack.Children.Add(new Label
+                {
+                    Text = reportImage.Comment,
+                    FontSize = 10,
+                    TextColor = Colors.Gray,
+                    HorizontalOptions = LayoutOptions.Center,
+                    LineBreakMode = LineBreakMode.TailTruncation,
+                    MaxLines = 1
+                });
+            }
+
+            block.Content = stack;
+            return block;
+        }
+
+        private void UpdateUI()
+        {
+            if (TotalImagesLabel != null)
+                TotalImagesLabel.Text = $"Total Images: {_reportImages.Count}";
+            
+            if (ImagesPerPageLabel != null)
+                ImagesPerPageLabel.Text = _imagesPerPage.ToString();
+        }
+
+        private async void OnBackButtonClicked(object sender, EventArgs e)
+        {
+            await Navigation.PopAsync();
+        }
+
+        protected override bool OnBackButtonPressed()
+        {
+            Device.BeginInvokeOnMainThread(async () =>
+            {
+                await Navigation.PopAsync();
+            });
+            return true;
+        }
+
+        private async void OnIncreaseImagesPerPage(object sender, EventArgs e)
+        {
+            if (_imagesPerPage < 12)
+            {
+                _imagesPerPage += 2;
+                UpdateUI();
+                BuildPreviewPages();
+            }
+        }
+
+        private async void OnDecreaseImagesPerPage(object sender, EventArgs e)
+        {
+            if (_imagesPerPage > 2)
+            {
+                _imagesPerPage -= 2;
+                UpdateUI();
+                BuildPreviewPages();
+            }
+        }
+
+        private async void OnGeneratePDFClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                // Show progress overlay
+                if (ProgressOverlay != null)
+                {
+                    ProgressOverlay.IsVisible = true;
+                    ProgressIndicator.IsRunning = true;
+                    ProgressLabel.Text = "Generating PDF...";
+                }
+
+                // Generate PDF
+                var pdfPath = await _pdfGeneratorService.GeneratePDFAsync(_reportImages, _imagesPerPage);
+                
+                if (!string.IsNullOrEmpty(pdfPath) && File.Exists(pdfPath))
+                {
+                    // Hide progress overlay
+                    if (ProgressOverlay != null)
+                    {
+                        ProgressOverlay.IsVisible = false;
+                        ProgressIndicator.IsRunning = false;
+                    }
+
+                    // Share the PDF
+                    await Share.Default.RequestAsync(new ShareFileRequest
+                    {
+                        File = new ShareFile(pdfPath),
+                        Title = "Share Report PDF"
+                    });
+
+                    // Navigate back
+                    await Navigation.PopAsync();
+                }
+                else
+                {
+                    if (ProgressOverlay != null)
+                    {
+                        ProgressOverlay.IsVisible = false;
+                        ProgressIndicator.IsRunning = false;
+                    }
+                    await DisplayAlert("Error", "Failed to generate PDF", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ProgressOverlay != null)
+                {
+                    ProgressOverlay.IsVisible = false;
+                    ProgressIndicator.IsRunning = false;
+                }
+                await DisplayAlert("Error", $"Failed to generate PDF: {ex.Message}", "OK");
+            }
+        }
     }
 }

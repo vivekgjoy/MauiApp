@@ -7,18 +7,38 @@ public partial class MainPage : ContentPage
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly IApiService _apiService;
+    private readonly IReportImageService _reportImageService;
 
     public MainPage()
     {
         InitializeComponent();
         _authenticationService = ServiceHelper.GetService<IAuthenticationService>();
         _apiService = ServiceHelper.GetService<IApiService>();
+        _reportImageService = ServiceHelper.GetService<IReportImageService>();
     }
 
     private async void OnAddReportsClicked(object sender, EventArgs e)
     {
         try
         {
+            // Check if there are any unsaved changes in the report
+            if (_reportImageService.ReportImages.Count > 0)
+            {
+                var result = await DisplayAlert(
+                    "Unsaved Changes", 
+                    "You have unsaved changes in your current report. Starting a new report will clear all your work. Are you sure you want to continue?", 
+                    "Yes, Start New Report", 
+                    "Cancel");
+                
+                if (!result)
+                {
+                    return; // User cancelled, stay on current page
+                }
+                
+                // Clear all images for fresh start
+                _reportImageService.ClearAllImages();
+            }
+            
             await Shell.Current.GoToAsync(nameof(AddReportPage));
         }
         catch (Exception ex)

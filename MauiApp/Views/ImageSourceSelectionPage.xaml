@@ -2,7 +2,7 @@
 <ContentPage x:Class="MauiApp.Views.ImageSourceSelectionPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             BackgroundColor="{StaticResource TopCoral}"
+             BackgroundColor="Transparent"
              Title="">
 
     <Grid>
@@ -17,10 +17,9 @@
                                       NumberOfTapsRequired="1" />
             </BoxView.GestureRecognizers>
         </BoxView>
-        
+
         <!-- Bottom Sheet -->
         <Border x:Name="Sheet" 
-                BackgroundColor="{StaticResource TopCoral}" 
                 StrokeShape="RoundRectangle 16,16,0,0" 
                 VerticalOptions="End" 
                 HorizontalOptions="FillAndExpand" 
@@ -28,11 +27,20 @@
                 Padding="0"
                 HeightRequest="250"
                 StrokeThickness="0">
+
+            <!-- ✅ Vertical Gradient Background (same as LoginPage) -->
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+
             <Border.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnPanUpdated" />
                 <TapGestureRecognizer Tapped="OnSheetTapped" />
             </Border.GestureRecognizers>
-            
+
             <Grid RowDefinitions="Auto,Auto,*">
                 <!-- Drag Handle -->
                 <BoxView Grid.Row="0" 
@@ -41,7 +49,7 @@
                          HeightRequest="4" 
                          HorizontalOptions="Center" 
                          Margin="0,12,0,8" />
-                
+
                 <!-- Header -->
                 <Grid Grid.Row="1" Padding="24,8,24,16">
                     <!-- Title - Centered -->
@@ -52,7 +60,7 @@
                            VerticalOptions="Center"
                            HorizontalOptions="Center" />
                 </Grid>
-                
+
                 <!-- Options List -->
                 <Grid Grid.Row="2" 
                       VerticalOptions="FillAndExpand"
@@ -61,28 +69,28 @@
                             Stroke="Transparent" 
                             StrokeThickness="0" 
                             StrokeShape="RoundRectangle 12">
-                        
+
                         <StackLayout Spacing="0">
                             <!-- Gallery Option -->
                             <Grid Padding="20,20" ColumnDefinitions="Auto,*">
                                 <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding SelectGalleryCommand}" />
                                 </Grid.GestureRecognizers>
-                                
+
                                 <!-- Gallery Icon -->
                                 <Label Grid.Column="0" 
                                        Text="📷" 
                                        FontSize="24" 
                                        VerticalOptions="Center"
                                        Margin="0,0,16,0" />
-                                
+
                                 <!-- Gallery Text -->
                                 <Label Grid.Column="1" 
                                        Text="Gallery" 
                                        FontSize="18" 
                                        TextColor="Black" 
                                        VerticalOptions="Center" />
-                                
+
                                 <!-- Divider Line -->
                                 <BoxView Grid.ColumnSpan="2" 
                                          BackgroundColor="#F0F0F0" 
@@ -90,20 +98,20 @@
                                          VerticalOptions="End" 
                                          Margin="0,0,0,0" />
                             </Grid>
-                            
+
                             <!-- Camera Option -->
                             <Grid Padding="20,20" ColumnDefinitions="Auto,*">
                                 <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding SelectCameraCommand}" />
                                 </Grid.GestureRecognizers>
-                                
+
                                 <!-- Camera Icon -->
                                 <Label Grid.Column="0" 
                                        Text="📸" 
                                        FontSize="24" 
                                        VerticalOptions="Center"
                                        Margin="0,0,16,0" />
-                                
+
                                 <!-- Camera Text -->
                                 <Label Grid.Column="1" 
                                        Text="Camera" 

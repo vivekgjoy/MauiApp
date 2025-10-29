@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:components="clr-namespace:MauiApp.Views.Components"
              x:Class="MauiApp.Views.ReportsHistoryPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
@@ -19,9 +18,8 @@
             </BoxView.Background>
         </BoxView>
 
-        <!-- 🔹 Custom Header -->
-        <Grid x:Name="CustomNavHeader"
-              HeightRequest="120"
+        <!-- 🔹 Header -->
+        <Grid HeightRequest="120"
               VerticalOptions="Start"
               HorizontalOptions="FillAndExpand">
 
@@ -31,21 +29,23 @@
                 <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Padding="10,0,15,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ImageButton Grid.Column="0"
-                             Source="ic_arrow_back.svg"
-                             BackgroundColor="Transparent"
-                             WidthRequest="28"
-                             HeightRequest="28"
-                             HorizontalOptions="Start"
-                             VerticalOptions="Center"
-                             Clicked="OnBackButtonClicked"/>
+                <!-- ⬅️ Back Button -->
+                <Image Grid.Column="0"
+                       Source="ic_arrow_back.svg"
+                       WidthRequest="22"
+                       HeightRequest="22"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Start">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackButtonClicked" />
+                    </Image.GestureRecognizers>
+                </Image>
 
                 <Label Grid.Column="1"
                        Text="Reports History"
@@ -53,116 +53,116 @@
                        FontAttributes="Bold"
                        TextColor="White"
                        HorizontalOptions="Center"
-                       VerticalOptions="Center"
-                       HorizontalTextAlignment="Center"/>
+                       VerticalOptions="Center" />
             </Grid>
         </Grid>
 
-        <!-- 🧾 Main Content -->
+        <!-- 🧾 Reports List -->
         <ScrollView Margin="0,110,0,0"
-                    Padding="20,10,20,0">
-            <StackLayout Spacing="20">
+                    Padding="15,10,15,80">
+            <CollectionView x:Name="ReportsCollectionView"
+                            ItemsSource="{Binding Reports}"
+                            BackgroundColor="Transparent"
+                            SelectionMode="None">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical"
+                                       ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="White"
+                               CornerRadius="12"
+                               Padding="12"
+                               HasShadow="True">
+                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                  ColumnSpacing="10">
 
-                <!-- Reports List -->
-                <CollectionView x:Name="ReportsCollectionView"
-                                ItemsSource="{Binding Reports}"
-                                BackgroundColor="Transparent"
-                                SelectionMode="None">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Vertical"
-                                           ItemSpacing="10" />
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Frame BackgroundColor="White"
-                                   CornerRadius="12"
-                                   Padding="15"
-                                   HasShadow="True">
-                                <Grid ColumnDefinitions="Auto,*,Auto"
-                                      ColumnSpacing="15">
+                                <!-- 📄 PDF Icon -->
+                                <Image Grid.Column="0"
+                                       Source="ic_pdf_icon.png"
+                                       WidthRequest="28"
+                                       HeightRequest="28"
+                                       VerticalOptions="Center" />
 
-                                    <!-- PDF Icon -->
-                                    <Label Grid.Column="0"
-                                           Text="📄"
-                                           FontSize="32"
-                                           VerticalOptions="Center" />
+                                <!-- 📘 Report Info -->
+                                <StackLayout Grid.Column="1"
+                                             Spacing="3"
+                                             VerticalOptions="Center">
+                                    <Label Text="{Binding FileName}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
+                                           TextColor="Black"
+                                           LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding CreatedDate, StringFormat='Generated: {0:MMM dd, yyyy • HH:mm}'}"
+                                           FontSize="13"
+                                           TextColor="#666" />
+                                    <Label Text="{Binding ImageCount, StringFormat='{0} images'}"
+                                           FontSize="12"
+                                           TextColor="#999" />
+                                </StackLayout>
 
-                                    <!-- Report Info -->
-                                    <StackLayout Grid.Column="1"
-                                                 Spacing="5">
-                                        <Label Text="{Binding FileName}"
-                                               FontSize="16"
-                                               FontAttributes="Bold"
-                                               TextColor="Black" />
-                                        <Label Text="{Binding CreatedDate, StringFormat='Generated: {0:MMM dd, yyyy HH:mm}'}"
-                                               FontSize="14"
-                                               TextColor="#444" />
-                                        <Label Text="{Binding ImageCount, StringFormat='{0} images'}"
-                                               FontSize="12"
-                                               TextColor="#666" />
-                                    </StackLayout>
+                                <!-- 🎯 Action Icons -->
+                                <StackLayout Grid.Column="2"
+                                             Orientation="Horizontal"
+                                             Spacing="12"
+                                             VerticalOptions="Center">
 
-                                    <!-- Action Buttons -->
-                                    <StackLayout Grid.Column="2"
-                                                 Orientation="Horizontal"
-                                                 Spacing="10">
-                                        <Button Text="View"
-                                                FontSize="12"
-                                                BackgroundColor="{StaticResource TopCoral}"
-                                                TextColor="White"
-                                                HeightRequest="32"
-                                                WidthRequest="60"
-                                                Clicked="OnViewReportClicked"
-                                                CommandParameter="{Binding FilePath}" />
-                                        <Button Text="Share"
-                                                FontSize="12"
-                                                BackgroundColor="{StaticResource BottomCoral}"
-                                                TextColor="White"
-                                                HeightRequest="32"
-                                                WidthRequest="60"
-                                                Clicked="OnShareReportClicked"
-                                                CommandParameter="{Binding FilePath}" />
-                                    </StackLayout>
-                                </Grid>
-                            </Frame>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
+                                    <!-- 👁 View Icon -->
+                                    <ImageButton Source="ic_eye_icon.png"
+                                                 BackgroundColor="Transparent"
+                                                 WidthRequest="24"
+                                                 HeightRequest="24"
+                                                 Clicked="OnViewReportClicked"
+                                                 CommandParameter="{Binding FilePath}" />
 
-                <!-- Empty State -->
-                <Frame x:Name="EmptyStateFrame"
-                       BackgroundColor="White"
-                       CornerRadius="12"
-                       Padding="30"
-                       HasShadow="True"
-                       IsVisible="False">
-                    <StackLayout Spacing="15"
-                                 HorizontalOptions="Center">
-                        <Label Text="📄"
-                               FontSize="48"
-                               HorizontalOptions="Center" />
-                        <Label Text="No Reports Generated"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="Black"
-                               HorizontalOptions="Center" />
-                        <Label Text="Generate your first PDF report to see it here"
-                               FontSize="14"
-                               TextColor="#666"
-                               HorizontalOptions="Center" />
-                    </StackLayout>
-                </Frame>
-
-            </StackLayout>
+                                    <!-- 🔗 Share Icon -->
+                                    <ImageButton Source="ic_share_icon.png"
+                                                 BackgroundColor="Transparent"
+                                                 WidthRequest="24"
+                                                 HeightRequest="24"
+                                                 Clicked="OnShareReportClicked"
+                                                 CommandParameter="{Binding FilePath}" />
+                                </StackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
         </ScrollView>
+
+        <!-- 📄 Empty State -->
+        <Frame x:Name="EmptyStateFrame"
+               BackgroundColor="White"
+               CornerRadius="12"
+               Padding="30"
+               HasShadow="True"
+               IsVisible="False"
+               VerticalOptions="Center"
+               HorizontalOptions="Center"
+               Margin="30">
+            <StackLayout Spacing="15"
+                         HorizontalOptions="Center">
+                <Image Source="ic_pdf_icon.png"
+                       WidthRequest="60"
+                       HeightRequest="60"
+                       HorizontalOptions="Center" />
+                <Label Text="No Reports Generated"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="Black"
+                       HorizontalOptions="Center" />
+                <Label Text="Generate your first PDF report to see it here"
+                       FontSize="14"
+                       TextColor="#666"
+                       HorizontalOptions="Center" />
+            </StackLayout>
+        </Frame>
 
         <!-- 🔘 Bottom Button -->
         <Frame VerticalOptions="End"
                BackgroundColor="Transparent"
-               CornerRadius="0"
                Padding="20,15"
-               HasShadow="False"
-               Margin="0">
+               HasShadow="False">
             <Button Text="Generate New Report"
                     FontSize="16"
                     FontAttributes="Bold"
@@ -172,6 +172,6 @@
                     CornerRadius="25"
                     Clicked="OnGenerateNewReportClicked" />
         </Frame>
-    </Grid>
 
+    </Grid>
 </ContentPage>

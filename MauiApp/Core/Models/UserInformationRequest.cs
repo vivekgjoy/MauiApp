@@ -12,3 +12,11 @@ namespace MauiApp.Core.Models
     }
 }
 
+
+
+
+
+
+
+
+

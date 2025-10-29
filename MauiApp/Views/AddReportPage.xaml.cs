@@ -10,23 +10,72 @@ public partial class AddReportPage : ContentPage
     private readonly IBottomSheetService _bottomSheetService;
     private readonly IReportImageService _reportImageService;
     private const int MaxImages = 10;
+    
+    // State preservation properties
+    private string _savedTitle = string.Empty;
+    private string _savedDescription = string.Empty;
 
     public AddReportPage()
     {
         InitializeComponent();
         _bottomSheetService = ServiceHelper.GetService<IBottomSheetService>();
         _reportImageService = ServiceHelper.GetService<IReportImageService>();
+        
+        // Subscribe to text change events to save state
+        TitleEntry.TextChanged += OnTitleTextChanged;
+        DescriptionEditor.TextChanged += OnDescriptionTextChanged;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
+        // Check if we're coming back from PDF generation (no images = fresh start)
+        if (_reportImageService.ReportImages.Count == 0)
+        {
+            // Clear form data for fresh start
+            _savedTitle = string.Empty;
+            _savedDescription = string.Empty;
+            TitleEntry.Text = string.Empty;
+            DescriptionEditor.Text = string.Empty;
+            
+            // Force UI refresh
+            TitleEntry.Text = string.Empty;
+            DescriptionEditor.Text = string.Empty;
+        }
+        else
+        {
+            // Restore saved form data
+            if (!string.IsNullOrEmpty(_savedTitle))
+                TitleEntry.Text = _savedTitle;
+            if (!string.IsNullOrEmpty(_savedDescription))
+                DescriptionEditor.Text = _savedDescription;
+        }
+
         // Set navigation bar styling
         SetNavigationBarStyling();
 
         // Initialize images collection
         await UpdateImagesCollection();
+    }
+
+    private void OnTitleTextChanged(object sender, TextChangedEventArgs e)
+    {
+        _savedTitle = e.NewTextValue ?? string.Empty;
+    }
+
+    private void OnDescriptionTextChanged(object sender, TextChangedEventArgs e)
+    {
+        _savedDescription = e.NewTextValue ?? string.Empty;
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        
+        // Save current form state when navigating away
+        _savedTitle = TitleEntry.Text ?? string.Empty;
+        _savedDescription = DescriptionEditor.Text ?? string.Empty;
     }
 
     private void SetNavigationBarStyling()
@@ -199,22 +248,42 @@ public partial class AddReportPage : ContentPage
         var deleteButton = new Button
         {
             Text = "×",
-            FontSize = 18,
+            FontSize = 16,
             FontAttributes = FontAttributes.Bold,
             TextColor = Colors.White,
-            BackgroundColor = Color.FromArgb("#E50000"), // Red background
+            BackgroundColor = Color.FromArgb("#ED1C24"), // TopCoral background
             CornerRadius = 12,
             WidthRequest = 24,
             HeightRequest = 24,
             HorizontalOptions = LayoutOptions.End,
             VerticalOptions = LayoutOptions.Start,
-            Margin = new Thickness(0, 4, 4, 0)
+            Margin = new Thickness(0, 4, 8, 0),
+            Padding = new Thickness(0)
         };
 
-        // Add click handler for delete
+        // Edit button
+        var editButton = new Button
+        {
+            Text = "✏️",
+            FontSize = 14,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#4CAF50"), // Green background for edit
+            CornerRadius = 12,
+            WidthRequest = 24,
+            HeightRequest = 24,
+            HorizontalOptions = LayoutOptions.End,
+            VerticalOptions = LayoutOptions.Start,
+            Margin = new Thickness(0, 4, 36, 0), // Positioned to the left of delete button
+            Padding = new Thickness(0)
+        };
+
+        // Add click handlers
         deleteButton.Clicked += (s, e) => OnRemoveImageClicked(s, e, reportImage.Id);
+        editButton.Clicked += (s, e) => OnEditImageClicked(s, e, reportImage);
 
         grid.Children.Add(image);
+        grid.Children.Add(editButton);
         grid.Children.Add(deleteButton);
         frame.Content = grid;
 
@@ -225,6 +294,26 @@ public partial class AddReportPage : ContentPage
     {
         _reportImageService.RemoveImage(imageId);
         await UpdateImagesCollection();
+    }
+
+    private async void OnEditImageClicked(object sender, EventArgs e, ReportImage reportImage)
+    {
+        try
+        {
+            // Navigate to ImageEditPage with the existing image and editing flags
+            var imageEditPage = new ImageEditPage
+            {
+                ImagePath = reportImage.ImagePath,
+                ImageId = reportImage.Id,
+                IsEditingExisting = true
+            };
+            
+            await Navigation.PushAsync(imageEditPage);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK");
+        }
     }
 
     private async Task NavigateToImageEditing(string imagePath)
@@ -247,23 +336,47 @@ public partial class AddReportPage : ContentPage
 
     private async void OnBackClicked(object sender, EventArgs e)
     {
+        await HandleBackNavigation();
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        // Handle hardware back button
+        Device.BeginInvokeOnMainThread(async () =>
+        {
+            await HandleBackNavigation();
+        });
+        return true; // Prevent default back behavior
+    }
+
+    private async Task HandleBackNavigation()
+    {
+        // Check if there are any unsaved changes
+        if (!string.IsNullOrEmpty(TitleEntry.Text?.Trim()) || 
+            !string.IsNullOrEmpty(DescriptionEditor.Text?.Trim()) || 
+            _reportImageService.ReportImages.Count > 0)
+        {
+            var result = await DisplayAlert(
+                "Unsaved Changes", 
+                "You have unsaved changes. Are you sure you want to go back? You will lose your work.", 
+                "Yes, Go Back", 
+                "Cancel");
+            
+            if (!result)
+            {
+                return; // User cancelled, stay on current page
+            }
+        }
+        
+        // Navigate back to main page
         try
         {
-            // Use Shell navigation since all pages are registered as Shell routes
-            await Shell.Current.GoToAsync("..");
+            await Shell.Current.GoToAsync("//MainPage");
         }
         catch (Exception ex)
         {
-            // Fallback to main page if navigation fails
-            try
-            {
-                await Shell.Current.GoToAsync("//MainPage");
-            }
-            catch
-            {
-                // Last resort - just go back to main page
-                await Shell.Current.GoToAsync("//MainPage");
-            }
+            // Fallback navigation
+            await Shell.Current.GoToAsync("//MainPage");
         }
     }
 

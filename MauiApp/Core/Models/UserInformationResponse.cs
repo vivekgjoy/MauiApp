@@ -39,3 +39,11 @@ namespace MauiApp.Core.Models
     }
 }
 
+
+
+
+
+
+
+
+

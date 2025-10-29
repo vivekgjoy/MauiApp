@@ -45,7 +45,7 @@ namespace MauiApp
                     {
                         handler.PlatformView.Background = null;
                         handler.PlatformView.SetTextCursorDrawable(0); // Remove underline
-                        handler.PlatformView.SetTextColor(Android.Graphics.Color.White); // Set cursor color
+                        handler.PlatformView.SetTextColor(Android.Graphics.Color.Black); // Set text color to black for visibility
                     });
 #endif
                 })

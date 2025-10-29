@@ -19,7 +19,7 @@
             </BoxView.Background>
         </BoxView>
 
-        <!-- 🔹 Custom Header -->
+        <!-- 🔹 Custom Header (matched to ReportsHistoryPage) -->
         <Grid x:Name="CustomNavHeader"
               HeightRequest="120"
               VerticalOptions="Start"
@@ -31,22 +31,25 @@
                 <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Padding="10,0,15,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ImageButton Grid.Column="0"
-                             Source="ic_arrow_back.svg"
-                             BackgroundColor="Transparent"
-                             WidthRequest="28"
-                             HeightRequest="28"
-                             HorizontalOptions="Start"
-                             VerticalOptions="Center"
-                             Clicked="OnBackButtonClicked"/>
+                <!-- ⬅️ Back Button (smaller size like ReportsHistoryPage) -->
+                <Image Grid.Column="0"
+                       Source="ic_arrow_back.svg"
+                       WidthRequest="22"
+                       HeightRequest="22"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Start">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackButtonClicked" />
+                    </Image.GestureRecognizers>
+                </Image>
 
+                <!-- 🏷️ Title (same font size as ReportsHistoryPage) -->
                 <Label Grid.Column="1"
                        Text="Report Preview"
                        FontSize="18"
@@ -118,28 +121,35 @@
                 <!-- Preview Pages Container -->
                 <StackLayout x:Name="PreviewContainer" Spacing="20" />
 
-                <!-- Spacer for button -->
-                <BoxView HeightRequest="100" Color="Transparent" />
+                <BoxView HeightRequest="100"
+         BackgroundColor="Transparent"
+         Color="Transparent" />
 
             </StackLayout>
         </ScrollView>
 
-        <!-- 🔘 Publish Button -->
-        <Frame VerticalOptions="End"
-               BackgroundColor="White" 
-               Padding="20,15" 
-               HasShadow="True"
-               CornerRadius="0">
+        <Grid VerticalOptions="End"
+              Padding="0,0,0,25">
             <Button x:Name="GeneratePDFButton"
-                    Text="Publish PDF"
-                    FontSize="18"
-                    FontAttributes="Bold"
-                    BackgroundColor="{StaticResource TopCoral}"
-                    TextColor="White"
-                    HeightRequest="50"
-                    CornerRadius="25"
-                    Clicked="OnGeneratePDFClicked" />
-        </Frame>
+        Text="Publish PDF"
+        FontSize="18"
+        FontAttributes="Bold"
+        BackgroundColor="{StaticResource TopCoral}"
+        TextColor="White"
+        HeightRequest="55"
+        WidthRequest="200"
+        CornerRadius="28"
+        HorizontalOptions="Center"
+        Clicked="OnGeneratePDFClicked">
+                <Button.Shadow>
+                    <Shadow Brush="#80000000"
+                Offset="0,4"
+                Radius="10"
+                Opacity="0.4" />
+                </Button.Shadow>
+            </Button>
+
+        </Grid>
 
         <!-- Progress Overlay -->
         <Grid x:Name="ProgressOverlay"

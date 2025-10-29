@@ -133,6 +133,21 @@ public partial class ReportsHistoryPage : ContentPage
                     await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
                 }
             }
+            else if (sender is ImageButton imageButton && imageButton.CommandParameter is string imagePath)
+            {
+                if (File.Exists(imagePath))
+                {
+                    // Open PDF with default app
+                    await Launcher.OpenAsync(new OpenFileRequest
+                    {
+                        File = new ReadOnlyFile(imagePath)
+                    });
+                }
+                else
+                {
+                    await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -151,6 +166,21 @@ public partial class ReportsHistoryPage : ContentPage
                     await Share.Default.RequestAsync(new ShareFileRequest
                     {
                         File = new ShareFile(filePath),
+                        Title = "Share PDF Report"
+                    });
+                }
+                else
+                {
+                    await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
+                }
+            }
+            else if (sender is ImageButton imageButton && imageButton.CommandParameter is string imagePath)
+            {
+                if (File.Exists(imagePath))
+                {
+                    await Share.Default.RequestAsync(new ShareFileRequest
+                    {
+                        File = new ShareFile(imagePath),
                         Title = "Share PDF Report"
                     });
                 }

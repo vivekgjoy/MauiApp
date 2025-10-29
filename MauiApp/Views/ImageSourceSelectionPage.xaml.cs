@@ -18,10 +18,10 @@ public partial class ImageSourceSelectionPage : ContentPage
     {
         base.OnAppearing();
         System.Diagnostics.Debug.WriteLine("ImageSourceSelectionPage OnAppearing called");
-        
+
         // Wait a bit for the page to be fully rendered
         await Task.Delay(50);
-        
+
         // Slide up animation
         await AnimateIn();
     }
@@ -29,7 +29,7 @@ public partial class ImageSourceSelectionPage : ContentPage
     protected override async void OnDisappearing()
     {
         base.OnDisappearing();
-        
+
         // Slide down animation when closing
         await AnimateOut();
     }
@@ -40,7 +40,7 @@ public partial class ImageSourceSelectionPage : ContentPage
         _isAnimating = true;
 
         System.Diagnostics.Debug.WriteLine("AnimateIn called");
-        
+
         // Start from below screen
         Sheet.TranslationY = Sheet.Height;
         Sheet.Opacity = 1;
