@@ -10,6 +10,7 @@ public partial class AddReportPage : ContentPage
     private readonly IBottomSheetService _bottomSheetService;
     private readonly IReportImageService _reportImageService;
     private const int MaxImages = 10;
+	private bool _isFirstLoad = true;
     
     // State preservation properties
     private string _savedTitle = string.Empty;
@@ -26,38 +27,34 @@ public partial class AddReportPage : ContentPage
         DescriptionEditor.TextChanged += OnDescriptionTextChanged;
     }
 
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
 
-        // Check if we're coming back from PDF generation (no images = fresh start)
-        if (_reportImageService.ReportImages.Count == 0)
-        {
-            // Clear form data for fresh start
-            _savedTitle = string.Empty;
-            _savedDescription = string.Empty;
-            TitleEntry.Text = string.Empty;
-            DescriptionEditor.Text = string.Empty;
-            
-            // Force UI refresh
-            TitleEntry.Text = string.Empty;
-            DescriptionEditor.Text = string.Empty;
-        }
-        else
-        {
-            // Restore saved form data
-            if (!string.IsNullOrEmpty(_savedTitle))
-                TitleEntry.Text = _savedTitle;
-            if (!string.IsNullOrEmpty(_savedDescription))
-                DescriptionEditor.Text = _savedDescription;
-        }
+		// Set navigation bar styling
+		SetNavigationBarStyling();
 
-        // Set navigation bar styling
-        SetNavigationBarStyling();
+		// Only clear on first load
+		if (_isFirstLoad)
+		{
+			_isFirstLoad = false;
+			_savedTitle = string.Empty;
+			_savedDescription = string.Empty;
+			TitleEntry.Text = string.Empty;
+			DescriptionEditor.Text = string.Empty;
+		}
+		else
+		{
+			// Restore saved form data when coming back (e.g., after picking image)
+			if (!string.IsNullOrEmpty(_savedTitle))
+				TitleEntry.Text = _savedTitle;
+			if (!string.IsNullOrEmpty(_savedDescription))
+				DescriptionEditor.Text = _savedDescription;
+		}
 
-        // Initialize images collection
-        await UpdateImagesCollection();
-    }
+		// Initialize images collection
+		await UpdateImagesCollection();
+	}
 
     private void OnTitleTextChanged(object sender, TextChangedEventArgs e)
     {
@@ -124,17 +121,21 @@ public partial class AddReportPage : ContentPage
             }
 
             // Show dedicated image source selection bottom sheet
-            var imageSourcePage = new ImageSourceSelectionPage();
-            var viewModel = new ImageSourceSelectionViewModel();
-            imageSourcePage.BindingContext = viewModel;
-            
-            // Subscribe to the source selected event
-            viewModel.SourceSelected += async (sender, selectedSource) =>
-            {
-                await HandleImageSelection(selectedSource);
-            };
-            
-            await Navigation.PushModalAsync(imageSourcePage);
+			var imageSourcePage = new ImageSourceSelectionPage();
+			var viewModel = new ImageSourceSelectionViewModel();
+			imageSourcePage.BindingContext = viewModel;
+			
+			// Subscribe to the source selected event
+			viewModel.SourceSelected += async (sender, selectedSource) =>
+			{
+				await HandleImageSelection(selectedSource);
+			};
+			
+			// Save state before opening image source selection
+			_savedTitle = TitleEntry.Text ?? string.Empty;
+			_savedDescription = DescriptionEditor.Text ?? string.Empty;
+
+			await Navigation.PushModalAsync(imageSourcePage);
         }
         catch (Exception ex)
         {
@@ -147,6 +148,12 @@ public partial class AddReportPage : ContentPage
         try
         {
             FileResult photo = null;
+
+            // Dismiss the modal image source selection if it's still open
+            if (Navigation.ModalStack.Count > 0)
+            {
+                try { await Navigation.PopModalAsync(); } catch { }
+            }
 
             if (option == "Gallery")
             {

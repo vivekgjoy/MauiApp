@@ -35,11 +35,15 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ImageButton Source="ic_back.png"
-                 BackgroundColor="Transparent"
-                 WidthRequest="28"
-                 HeightRequest="28"
-                 Clicked="OnBackClicked" />
+                <Image Source="ic_arrow_back.svg"
+                       WidthRequest="22"
+                       HeightRequest="22"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Start">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackClicked" />
+                    </Image.GestureRecognizers>
+                </Image>
 
                 <Label Grid.Column="1"
            Text="Edit Image"
@@ -98,19 +102,23 @@
                     </Grid>
 
                     <!-- Tools: Brush/Eraser + Undo/Redo -->
-                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
                         <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
                                 BackgroundColor="{StaticResource TopCoral}" TextColor="White" CornerRadius="8" WidthRequest="44"/>
                         <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
                                 BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
                                 BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
-                        <BoxView Grid.Column="2"/>
-                        <Button x:Name="UndoButton" Grid.Column="3" Text="↶" Clicked="OnUndoClicked"
+                        <Button x:Name="TextToolButton" Grid.Column="2" Text="🅣" Clicked="OnToolSelected"
+                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
+                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
+                                CornerRadius="8" WidthRequest="44"/>
+                        <BoxView Grid.Column="3"/>
+                        <Button x:Name="UndoButton" Grid.Column="4" Text="↶" Clicked="OnUndoClicked"
                                 BackgroundColor="Transparent" TextColor="White"
                                 BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="RedoButton" Grid.Column="4" Text="↷" Clicked="OnRedoClicked"
+                        <Button x:Name="RedoButton" Grid.Column="5" Text="↷" Clicked="OnRedoClicked"
                                 BackgroundColor="Transparent" TextColor="White"
                                 BorderColor="{StaticResource TopCoral}" BorderWidth="1"
                                 CornerRadius="8" WidthRequest="44"/>
@@ -151,6 +159,67 @@
                             HeightRequest="48" />
                 </StackLayout>
             </Grid>
+        </Grid>
+
+        <!-- Custom Text Popup -->
+        <Grid x:Name="TextPopup"
+              IsVisible="False"
+              BackgroundColor="#80000000"
+              InputTransparent="False"
+              Opacity="0"
+              VerticalOptions="FillAndExpand"
+              HorizontalOptions="FillAndExpand">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnPopupBackgroundTapped" />
+            </Grid.GestureRecognizers>
+
+            <Frame x:Name="PopupFrame"
+                   BackgroundColor="White"
+                   CornerRadius="16"
+                   Padding="20"
+                   WidthRequest="300"
+                   HasShadow="True"
+                   InputTransparent="False"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center">
+                <VerticalStackLayout Spacing="15">
+                    
+                    <!-- Title -->
+                    <Label x:Name="PopupTitle"
+                           Text="Enter Text"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           TextColor="Black"
+                           HorizontalOptions="Start" />
+
+                    <!-- Text Entry -->
+                    <Entry x:Name="PopupEntry"
+                           Placeholder="Type here..."
+                           TextColor="Black"
+                           PlaceholderColor="#888"
+                           FontSize="16" />
+
+                    <!-- Buttons -->
+                    <HorizontalStackLayout Spacing="30"
+                                           HorizontalOptions="End">
+                        <Button Text="Cancel"
+                                Clicked="OnPopupCancelClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="Black"
+                                FontAttributes="Bold"
+                                Padding="0"
+                                HeightRequest="40" />
+                        <Button Text="OK"
+                                Clicked="OnPopupOkClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="Black"
+                                FontAttributes="Bold"
+                                Padding="0"
+                                HeightRequest="40" />
+                    </HorizontalStackLayout>
+
+                </VerticalStackLayout>
+            </Frame>
         </Grid>
     </Grid>
 </ContentPage>

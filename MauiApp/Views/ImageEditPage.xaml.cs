@@ -41,6 +41,11 @@ namespace MauiApp.Views
         private float _currentStrokeWidth => _brushSize;
         private float _currentAlpha = 1f;
 
+        // Text editing state
+        private TextDrawable? _editingTextItem = null;
+        private SKPoint _textPosition;
+        private SKPoint _textPressPoint; // Track where text tool press started
+
         public string? ImagePath
         {
             get => _imagePath;
@@ -100,6 +105,7 @@ namespace MauiApp.Views
         {
             if (sender == BrushToolButton) _currentTool = ToolMode.Brush;
             else if (sender == EraserToolButton) _currentTool = ToolMode.Eraser;
+            else if (sender == TextToolButton) _currentTool = ToolMode.Text;
             else if (sender == ArrowToolButton) _currentTool = ToolMode.Arrow;
             else if (sender == CircleToolButton) _currentTool = ToolMode.Circle;
             else if (sender == SquareToolButton) _currentTool = ToolMode.Square;
@@ -112,7 +118,7 @@ namespace MauiApp.Views
 
         private void UpdateToolSelectionUI()
         {
-            foreach (var btn in new[] { BrushToolButton, EraserToolButton, ArrowToolButton, CircleToolButton, SquareToolButton, CheckToolButton, CrossToolButton })
+            foreach (var btn in new[] { BrushToolButton, EraserToolButton, TextToolButton, ArrowToolButton, CircleToolButton, SquareToolButton, CheckToolButton, CrossToolButton })
             {
                 btn.BackgroundColor = Colors.Transparent;
                 btn.TextColor = Color.FromArgb("#ED1C24");
@@ -122,6 +128,7 @@ namespace MauiApp.Views
             {
                 ToolMode.Brush => BrushToolButton,
                 ToolMode.Eraser => EraserToolButton,
+                ToolMode.Text => TextToolButton,
                 ToolMode.Arrow => ArrowToolButton,
                 ToolMode.Circle => CircleToolButton,
                 ToolMode.Square => SquareToolButton,
@@ -293,7 +300,6 @@ namespace MauiApp.Views
 
         private async Task HandleBackNavigation()
         {
-            // Check if there are any unsaved changes
             if (_items.Count > 0)
             {
                 var result = await DisplayAlert(
@@ -304,15 +310,70 @@ namespace MauiApp.Views
                 
                 if (!result)
                 {
-                    return; // User cancelled, stay on current page
+                    return;
                 }
             }
             
-            // Navigate back
             await Navigation.PopAsync();
         }
 
-        // ---------------- Touch Handling ----------------
+        private async Task ShowTextPopup(string title, string initialText = "")
+        {
+            PopupTitle.Text = title;
+            PopupEntry.Text = initialText;
+
+            TextPopup.IsVisible = true;
+            PopupFrame.Scale = 0.8;
+            await Task.WhenAll(
+                PopupFrame.ScaleTo(1, 200, Easing.CubicOut),
+                TextPopup.FadeTo(1, 200, Easing.CubicInOut)
+            );
+        }
+
+        private async Task HideTextPopup()
+        {
+            await Task.WhenAll(
+                PopupFrame.ScaleTo(0.8, 150, Easing.CubicIn),
+                TextPopup.FadeTo(0, 150, Easing.CubicInOut)
+            );
+            TextPopup.IsVisible = false;
+        }
+
+        private async void OnPopupBackgroundTapped(object sender, TappedEventArgs e)
+        {
+            await HideTextPopup();
+            _editingTextItem = null;
+        }
+
+        private async void OnPopupCancelClicked(object sender, EventArgs e)
+        {
+            await HideTextPopup();
+            _editingTextItem = null;
+        }
+
+        private async void OnPopupOkClicked(object sender, EventArgs e)
+        {
+            var text = PopupEntry.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                if (_editingTextItem != null)
+                {
+                    // Edit existing text
+                    _editingTextItem.Text = text;
+                    _editingTextItem = null;
+                }
+                else
+                {
+                    // Add new text
+                    var newItem = new TextDrawable(text, _textPosition, _currentColor, _brushSize * 10);
+                    _items.Add(newItem);
+                    _undoStack.Clear(); 
+                    _redoStack.Clear();
+                }
+                CanvasView.InvalidateSurface();
+            }
+            await HideTextPopup();
+        }
         private void OnTouchEffectAction(object sender, SKTouchEventArgs e)
         {
             var id = e.Id;
@@ -325,9 +386,8 @@ namespace MauiApp.Views
 
                     if (_activeTouches.Count == 1)
                     {
-                        // Single-finger flow: hit-test for selection/move or start draw/shape
                         var hit = HitTestItem(pt);
-                        if (hit != null && _currentTool != ToolMode.Brush && _currentTool != ToolMode.Eraser)
+                        if (hit != null && (_currentTool != ToolMode.Brush && _currentTool != ToolMode.Eraser && _currentTool != ToolMode.Text))
                         {
                             _selectedItem = hit;
                             _isDraggingItem = true;
@@ -349,6 +409,24 @@ namespace MauiApp.Views
                             _items.Add(p);
                             _undoStack.Clear(); _redoStack.Clear();
                         }
+                        else if (_currentTool == ToolMode.Text)
+                        {
+                            var tappedItem = HitTestItem(pt);
+                            if (tappedItem is TextDrawable textItem)
+                            {
+                                _selectedItem = textItem;
+                                _lastDragPoint = pt;
+                                _isDraggingItem = true;
+                                _textPressPoint = pt;
+                            }
+                            else
+                            {
+                                _textPosition = pt;
+                                _selectedItem = null;
+                                _isDraggingItem = false;
+                                _textPressPoint = pt;
+                            }
+                        }
                         else
                         {
                             _startPoint = pt;
@@ -357,7 +435,6 @@ namespace MauiApp.Views
                     }
                     else if (_activeTouches.Count == 2 && _selectedItem != null)
                     {
-                        // Start pinch/rotate: remember initial distance/angle and bounds
                         var pts = _activeTouches.Values.ToList();
                         _initialDistance = Distance(pts[0], pts[1]);
                         _initialRotation = GetAngle(pts[0], pts[1]);
@@ -371,7 +448,6 @@ namespace MauiApp.Views
 
                     if (_activeTouches.Count == 1)
                     {
-                        // Single finger move/draw/shape-resize preview
                         var only = _activeTouches.Values.First();
                         if (_isDraggingItem && _selectedItem != null)
                         {
@@ -395,6 +471,14 @@ namespace MauiApp.Views
                                 lastPath.Path.LineTo(only);
                             CanvasView.InvalidateSurface();
                         }
+                        else if (_currentTool == ToolMode.Text && _isDraggingItem && _selectedItem is TextDrawable textItem)
+                        {
+                            var dx = only.X - _lastDragPoint.X;
+                            var dy = only.Y - _lastDragPoint.Y;
+                            textItem.Translate(dx, dy);
+                            _lastDragPoint = only;
+                            CanvasView.InvalidateSurface();
+                        }
                         else if (_tempShape != null)
                         {
                             _tempShape.UpdateGeometry(_startPoint, only);
@@ -403,57 +487,84 @@ namespace MauiApp.Views
                     }
                     else if (_activeTouches.Count == 2 && _selectedItem != null)
                     {
-                        // two-finger pinch/rotate
                         var pts = _activeTouches.Values.ToList();
                         var newDist = Distance(pts[0], pts[1]);
-                        var newAngle = GetAngle(pts[0], pts[1]);
 
-                        // guard against division by zero (very small initial distance)
                         if (_initialDistance <= 0f) _initialDistance = newDist != 0f ? newDist : 1f;
 
                         var scale = newDist / _initialDistance;
-                        var rotationDelta = newAngle - _initialRotation;
-
-                        if (_selectedItem is RotatableDrawable rot)
+                        
+                        if (_selectedItem is TextDrawable)
                         {
+                            scale = Math.Max(0.5f, Math.Min(3f, scale));
+                        }
+
+                        if (_selectedItem is TextDrawable textItem)
+                        {
+                            textItem.ScaleFromBounds(_originalBounds, scale);
+                            CanvasView.InvalidateSurface();
+                        }
+                        else if (_selectedItem is RotatableDrawable rot)
+                        {
+                            var newAngle = GetAngle(pts[0], pts[1]);
+                            var rotationDelta = newAngle - _initialRotation;
                             rot.ScaleFromBounds(_originalBounds, scale);
                             rot.ApplyRotation(rotationDelta);
-                        CanvasView.InvalidateSurface();
+                            CanvasView.InvalidateSurface();
                         }
                     }
                     break;
 
                 case SKTouchAction.Released:
                 case SKTouchAction.Cancelled:
-                    // remove the finger
+                    if (_currentTool == ToolMode.Text && _activeTouches.Count == 1)
+                    {
+                        if (_isDraggingItem && _selectedItem != null)
+                        {
+                            _isDraggingItem = false;
+                        }
+                        else
+                        {
+                            Device.BeginInvokeOnMainThread(async () =>
+                            {
+                                var tappedItem = HitTestItem(pt);
+                                if (tappedItem is TextDrawable textItem)
+                                {
+                                    _editingTextItem = textItem;
+                                    await ShowTextPopup("Edit Text", textItem.Text);
+                                }
+                                else
+                                {
+                                    _editingTextItem = null;
+                                    _textPosition = pt;
+                                    await ShowTextPopup("Add Text");
+                                }
+                            });
+                        }
+                    }
+                    
                     _activeTouches.Remove(id);
 
-                    // If all fingers removed, finalize and reset transient state
                     if (_activeTouches.Count == 0)
                     {
                         _isDraggingItem = false;
 
-                        // finalize path
                         _currentPath = null;
 
-                        // finalize temp shape into items
                         if (_tempShape != null)
                         {
                             _items.Add(_tempShape);
                             _tempShape = null;
                         }
 
-                        // reset pinch/rotate state
                         _initialDistance = 0f;
                         _initialRotation = 0f;
-                        // keep selected item (optional): currently we clear selection so tools start fresh
                         _selectedItem = null;
 
                         CanvasView.InvalidateSurface();
                     }
                     else if (_activeTouches.Count == 1)
                     {
-                        // if one finger remains after multi-touch, reset initial pinch values so future pinch restarts cleanly
                         var remaining = _activeTouches.Values.First();
                         _initialDistance = 0f;
                         _initialRotation = 0f;
@@ -473,12 +584,20 @@ namespace MauiApp.Views
         // ---------------- Shapes & interfaces ----------------
         private IDrawableItem? HitTestItem(SKPoint p)
         {
+            // Loop through items in reverse (top-most first)
             for (int i = _items.Count - 1; i >= 0; i--)
             {
-                var r = _items[i].GetBounds();
-                var expanded = r;
-                expanded.Inflate(10, 10); // mutate local copy
-                if (expanded.Contains(p)) return _items[i];
+                var item = _items[i];
+                var bounds = item.GetBounds();
+                
+                // Expand bounds for easier tapping
+                // Use larger expansion for text items
+                float expansion = item is TextDrawable ? 20 : 10;
+                var expanded = bounds;
+                expanded.Inflate(expansion, expansion);
+                
+                if (expanded.Contains(p))
+                    return item;
             }
             return null;
         }
@@ -542,9 +661,6 @@ namespace MauiApp.Views
             void UpdateGeometry(SKPoint start, SKPoint end);
         }
 
-        /// <summary>
-        /// Base class for drawables that support rotation & scaling from original bounds.
-        /// </summary>
         private abstract class RotatableDrawable : IDrawableItem
         {
             protected float rotation = 0f;
@@ -553,11 +669,7 @@ namespace MauiApp.Views
             public abstract SKRect GetBounds();
             public abstract void Translate(float dx, float dy);
             public abstract void UpdateGeometry(SKPoint start, SKPoint current);
-
-            /// <summary>Scale relative to the original bounds center.</summary>
             public abstract void ScaleFromBounds(SKRect original, float scale);
-
-            /// <summary>Apply rotation delta (radians).</summary>
             public void ApplyRotation(float delta) => rotation += delta;
         }
 
@@ -598,7 +710,6 @@ namespace MauiApp.Views
             public void UpdateGeometry(SKPoint start, SKPoint current) => Path.LineTo(current);
         }
 
-        // ---------------- Drawable classes ----------------
         private class RectDrawable : RotatableDrawable
         {
             public SKRect Rect;
@@ -671,14 +782,12 @@ namespace MauiApp.Views
 
                 using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
 
-                // draw line across the middle of rect
                 var start = new SKPoint(Rect.Left, Rect.MidY);
                 var end = new SKPoint(Rect.Right, Rect.MidY);
                 c.DrawLine(start, end, p);
 
-                // simple arrow head proportional to rect size
                 var len = Math.Min(20, Math.Max(8, Rect.Width / 6));
-                var angle = 0f; // horizontal line so angle 0; rotation handled by canvas
+                var angle = 0f;
                 var left = new SKPoint(end.X - len * (float)Math.Cos(angle - Math.PI / 6), end.Y - len * (float)Math.Sin(angle - Math.PI / 6));
                 var right = new SKPoint(end.X - len * (float)Math.Cos(angle + Math.PI / 6), end.Y - len * (float)Math.Sin(angle + Math.PI / 6));
                 c.DrawLine(end, left, p);
@@ -731,6 +840,119 @@ namespace MauiApp.Views
             }
         }
 
-        private enum ToolMode { Brush, Eraser, Arrow, Circle, Square, Check, Cross }
+        private class TextDrawable : RotatableDrawable
+        {
+            public string Text { get; set; }
+            public SKPoint Position { get; private set; }
+            public SKColor Color { get; private set; }
+            public float FontSize { get; private set; }
+            private readonly float _originalFontSize;
+            private const float MinTextScale = 0.3f;
+            private const float MaxTextScale = 4.0f;
+
+            public TextDrawable(string text, SKPoint position, SKColor color, float fontSize)
+            {
+                Text = text;
+                Position = position;
+                Color = color;
+                _originalFontSize = fontSize;
+                FontSize = fontSize;
+            }
+
+            public override void Draw(SKCanvas c)
+            {
+                using var paint = new SKPaint
+                {
+                    Color = Color,
+                    IsAntialias = true,
+                    TextSize = FontSize,
+                    IsStroke = false,
+                    TextAlign = SKTextAlign.Left
+                };
+
+                c.Save();
+                c.Translate(Position.X, Position.Y);
+                c.RotateRadians(rotation);
+                c.DrawText(Text, 0, 0, paint);
+                c.Restore();
+            }
+
+            public override SKRect GetBounds()
+            {
+                if (string.IsNullOrEmpty(Text))
+                    return new SKRect(Position.X, Position.Y, Position.X + 10, Position.Y + 10);
+                
+                using var paint = new SKPaint 
+                { 
+                    TextSize = FontSize,
+                    IsAntialias = true,
+                    TextAlign = SKTextAlign.Left
+                };
+               
+                var bounds = new SKRect();
+                paint.MeasureText(Text, ref bounds);
+                
+                var fontMetrics = paint.FontMetrics;
+                
+                var textWidth = bounds.Width;
+                var textHeight = Math.Abs(fontMetrics.Ascent) + Math.Abs(fontMetrics.Descent);
+                
+                var result = new SKRect(
+                    Position.X,                    // Left
+                    Position.Y - Math.Abs(fontMetrics.Ascent),
+                    Position.X + textWidth,        // Right
+                    Position.Y + Math.Abs(fontMetrics.Descent)
+                );
+                
+                if (result.Width < 20) result.Right = result.Left + 20;
+                if (result.Height < 20) result.Bottom = result.Top + 20;
+                
+                return result;
+            }
+
+            public override void Translate(float dx, float dy)
+            {
+                Position = new SKPoint(Position.X + dx, Position.Y + dy);
+            }
+
+            public override void UpdateGeometry(SKPoint start, SKPoint end)
+            {
+                Position = end;
+            }
+
+            public override void ScaleFromBounds(SKRect original, float scale)
+            {
+                scale = Math.Max(MinTextScale, Math.Min(MaxTextScale, scale));
+
+                FontSize = _originalFontSize * scale;
+
+                using var paint = new SKPaint
+                {
+                    TextSize = FontSize,
+                    IsAntialias = true,
+                    TextAlign = SKTextAlign.Left
+                };
+
+                var textBounds = new SKRect();
+                paint.MeasureText(Text ?? string.Empty, ref textBounds);
+                var metrics = paint.FontMetrics;
+                var ascentAbs = Math.Abs(metrics.Ascent);
+                var descentAbs = Math.Abs(metrics.Descent);
+                var newWidth = textBounds.Width;
+                var newHeight = ascentAbs + descentAbs;
+
+                var centerX = original.MidX;
+                var centerY = original.MidY;
+                var left = centerX - newWidth / 2f;
+                var top = centerY - newHeight / 2f;
+
+                if (left < 0) left = 0;
+                if (top < 0) top = 0;
+
+                Position = new SKPoint(left, top + ascentAbs);
+            }
+        }
+
+        private enum ToolMode { Brush, Eraser, Arrow, Circle, Square, Check, Cross, Text }
     }
 }

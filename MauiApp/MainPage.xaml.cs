@@ -24,21 +24,19 @@ public partial class MainPage : ContentPage
             // Check if there are any unsaved changes in the report
             if (_reportImageService.ReportImages.Count > 0)
             {
-                var result = await DisplayAlert(
-                    "Unsaved Changes", 
-                    "You have unsaved changes in your current report. Starting a new report will clear all your work. Are you sure you want to continue?", 
-                    "Yes, Start New Report", 
-                    "Cancel");
-                
-                if (!result)
+                var dialogResult = await UnsavedChangesDialog.ShowAsync();
+                if (dialogResult == Views.UnsavedChangesResult.Closed)
                 {
-                    return; // User cancelled, stay on current page
+                    return; // User closed dialog
                 }
-                
-                // Clear all images for fresh start
-                _reportImageService.ClearAllImages();
+                if (dialogResult == Views.UnsavedChangesResult.StartNew)
+                {
+                    // Clear all images for fresh start
+                    _reportImageService.ClearAllImages();
+                }
+                // Continue -> do not clear
             }
-            
+
             await Shell.Current.GoToAsync(nameof(AddReportPage));
         }
         catch (Exception ex)

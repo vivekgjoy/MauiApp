@@ -1,4 +1,11 @@
 using MauiApp.ViewModels;
+using Microsoft.Maui.Platform;
+#if ANDROID
+using AndroidX.AppCompat.App;
+using Android.OS;
+using Android.Views;
+using AColor = Android.Graphics.Color;
+#endif
 
 namespace MauiApp.Views;
 
@@ -7,6 +14,11 @@ public partial class ImageSourceSelectionPage : ContentPage
     private double _initialY;
     private double _currentY;
     private bool _isAnimating = false;
+    
+#if ANDROID
+    private AColor? _prevStatusBarColor;
+    private bool _prevLightStatusBar;
+#endif
 
     public ImageSourceSelectionPage()
     {
@@ -18,6 +30,34 @@ public partial class ImageSourceSelectionPage : ContentPage
     {
         base.OnAppearing();
         System.Diagnostics.Debug.WriteLine("ImageSourceSelectionPage OnAppearing called");
+
+#if ANDROID
+        try
+        {
+            var activity = Platform.CurrentActivity as AppCompatActivity;
+            if (activity != null && Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
+            {
+                // Save previous status bar appearance
+                if (activity.Window != null)
+                {
+                    _prevStatusBarColor = new AColor(activity.Window.StatusBarColor);
+                }
+
+                var decor = activity.Window?.DecorView;
+                if (decor != null)
+                {
+                    var flags = (int)decor.SystemUiFlags;
+                    _prevLightStatusBar = (flags & (int)SystemUiFlags.LightStatusBar) != 0;
+                    // Force dark status bar background with light icons by clearing LightStatusBar flag
+                    decor.SystemUiFlags = (SystemUiFlags)(flags & ~(int)SystemUiFlags.LightStatusBar);
+                }
+
+                // Make status bar transparent so parent page gradient/color shows through
+                activity.Window?.SetStatusBarColor(AColor.Transparent);
+            }
+        }
+        catch { }
+#endif
 
         // Wait a bit for the page to be fully rendered
         await Task.Delay(50);
@@ -32,6 +72,37 @@ public partial class ImageSourceSelectionPage : ContentPage
 
         // Slide down animation when closing
         await AnimateOut();
+
+#if ANDROID
+        try
+        {
+            var activity = Platform.CurrentActivity as AppCompatActivity;
+            if (activity != null && Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
+            {
+                // Restore previous status bar color
+                if (_prevStatusBarColor.HasValue)
+                {
+                    activity.Window?.SetStatusBarColor(_prevStatusBarColor.Value);
+                }
+
+                // Restore previous icon/light flag
+                var decor = activity.Window?.DecorView;
+                if (decor != null)
+                {
+                    var flags = (int)decor.SystemUiFlags;
+                    if (_prevLightStatusBar)
+                    {
+                        decor.SystemUiFlags = (SystemUiFlags)(flags | (int)SystemUiFlags.LightStatusBar);
+                    }
+                    else
+                    {
+                        decor.SystemUiFlags = (SystemUiFlags)(flags & ~(int)SystemUiFlags.LightStatusBar);
+                    }
+                }
+            }
+        }
+        catch { }
+#endif
     }
 
     private async Task AnimateIn()

@@ -5,6 +5,10 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@color/navigationBarColor</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <!-- Make the window translucent/transparent so underlying gradient remains visible -->
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
     </style>
     
     <style name="Maui.SplashTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">

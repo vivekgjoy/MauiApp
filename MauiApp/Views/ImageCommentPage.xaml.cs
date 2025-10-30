@@ -150,35 +150,42 @@ public partial class ImageCommentPage : ContentPage
                 return;
             }
 
+            // 1. Save the image/comment as before
             if (_isEditingExisting && !string.IsNullOrEmpty(_imageId))
             {
-                // Update existing image
-                System.Diagnostics.Debug.WriteLine($"Updating existing image {_imageId} with path: {_imagePath}");
                 _reportImageService.UpdateImageComment(_imageId, CommentEditor.Text?.Trim() ?? string.Empty);
-                _reportImageService.UpdateImagePath(_imageId, _imagePath); // Update image path in case it changed
+                _reportImageService.UpdateImagePath(_imageId, _imagePath);
             }
             else
             {
-                // Create new ReportImage object
                 var reportImage = new ReportImage
                 {
                     ImagePath = _imagePath,
                     Comment = CommentEditor.Text?.Trim() ?? string.Empty,
                     CreatedAt = DateTime.Now
                 };
-
-                System.Diagnostics.Debug.WriteLine($"Adding new image to service: {_imagePath}, Comment: {reportImage.Comment}");
-
-                // Add to the shared collection
                 _reportImageService.AddImage(reportImage);
-
-                System.Diagnostics.Debug.WriteLine($"Image added. Total images in service: {_reportImageService.ReportImages.Count}");
             }
 
-            // Navigate back to AddReportPage
-            // Use relative navigation to go back to the original AddReportPage
-            System.Diagnostics.Debug.WriteLine("ImageCommentPage: Navigating back to AddReportPage");
-            await Shell.Current.GoToAsync("../AddReportPage");
+            // 2. Prune ALL intermediate pages above AddReportPage
+            while (Navigation.NavigationStack.Count > 1 &&
+                Navigation.NavigationStack[Navigation.NavigationStack.Count - 2] is not AddReportPage)
+            {
+                var pageToRemove = Navigation.NavigationStack[Navigation.NavigationStack.Count - 2];
+                Navigation.RemovePage(pageToRemove);
+            }
+
+            // 3. If AddReportPage is just below us: pop there
+            if (Navigation.NavigationStack.Count > 1 &&
+                Navigation.NavigationStack[Navigation.NavigationStack.Count - 2] is AddReportPage)
+            {
+                await Navigation.PopAsync(animated: false);
+            }
+            else
+            {
+                // Fallback: If no AddReportPage in stack, navigate absolutely
+                await Shell.Current.GoToAsync("//AddReportPage");
+            }
         }
         catch (Exception ex)
         {

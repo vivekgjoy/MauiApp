@@ -2,6 +2,7 @@
 using Android.Content.PM;
 using Android.OS;
 using Android.Views;
+using Android.Graphics.Drawables;
 using AndroidX.Core.View;
 using AndroidX.Core.Content;
 using MauiApp.Core.Interfaces;
@@ -18,6 +19,13 @@ namespace MauiApp
         {
             base.OnCreate(savedInstanceState);
             
+            // Make window background transparent to avoid black flash behind native pickers
+            try
+            {
+                Window?.SetBackgroundDrawable(new ColorDrawable(Android.Graphics.Color.Transparent));
+            }
+            catch { }
+
             // Set status bar and navigation bar colors
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {

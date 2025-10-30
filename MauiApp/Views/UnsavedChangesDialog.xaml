@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.Views.UnsavedChangesDialog"
+             BackgroundColor="Transparent"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
+
+    <Grid>
+        <!-- Overlay -->
+        <BoxView BackgroundColor="#80000000" />
+
+        <!-- Dialog Card -->
+        <Frame BackgroundColor="#2C2C2E"
+               CornerRadius="20"
+               HasShadow="True"
+               Margin="28,0,28,0"
+               VerticalOptions="Center"
+               HorizontalOptions="FillAndExpand"
+               Padding="0">
+
+            <Grid RowDefinitions="Auto,Auto,Auto" Padding="0">
+                <!-- Header with title and close icon -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="24,20,16,0">
+                    <Label Text="Unsaved Changes"
+                           FontSize="20"
+                           FontFamily="OpenSansSemibold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+
+                    <ImageButton Grid.Column="1"
+                                 Source="ic_close.png"
+                                 BackgroundColor="Transparent"
+                                 Padding="8"
+                                 Clicked="OnCloseClicked"
+                                 HorizontalOptions="End"
+                                 VerticalOptions="Center" />
+                </Grid>
+
+                <!-- Message -->
+                <Label Grid.Row="1"
+                       Margin="24,12,24,16"
+                       Text="You have unsaved changes in your current report."
+                       FontSize="16"
+                       FontFamily="OpenSansRegular"
+                       TextColor="#E5E5EA" />
+
+                <!-- Buttons -->
+                <Grid Grid.Row="2" ColumnDefinitions="*,*" RowDefinitions="Auto">
+                    <Button Grid.Column="0"
+                            Text="Continue"
+                            Command="{Binding ContinueCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#8E8E93"
+                            FontSize="17"
+                            FontFamily="OpenSansSemibold"
+                            HeightRequest="50"
+                            CornerRadius="0" />
+
+                    <BoxView Grid.Column="0"
+                             Grid.ColumnSpan="2"
+                             Color="#3A3A3C"
+                             WidthRequest="1"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Fill" />
+
+                    <Button Grid.Column="1"
+                            Text="Start New"
+                            Command="{Binding StartNewCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#FF3B30"
+                            FontSize="17"
+                            FontFamily="OpenSansSemibold"
+                            HeightRequest="50"
+                            CornerRadius="0" />
+                </Grid>
+            </Grid>
+        </Frame>
+    </Grid>
+</ContentPage>
+
+
