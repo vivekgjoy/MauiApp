@@ -21,20 +21,10 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            // Check if there are any unsaved changes in the report
+            // Always clear all images for fresh start (removed unsaved changes popup)
             if (_reportImageService.ReportImages.Count > 0)
             {
-                var dialogResult = await UnsavedChangesDialog.ShowAsync();
-                if (dialogResult == Views.UnsavedChangesResult.Closed)
-                {
-                    return; // User closed dialog
-                }
-                if (dialogResult == Views.UnsavedChangesResult.StartNew)
-                {
-                    // Clear all images for fresh start
-                    _reportImageService.ClearAllImages();
-                }
-                // Continue -> do not clear
+                _reportImageService.ClearAllImages();
             }
 
             await Shell.Current.GoToAsync(nameof(AddReportPage));

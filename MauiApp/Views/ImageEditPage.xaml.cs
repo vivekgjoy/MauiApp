@@ -80,10 +80,20 @@ namespace MauiApp.Views
         // ---------------- UI events ----------------
         private void OnColorButtonClicked(object sender, EventArgs e)
         {
-            if (sender == RedColorButton) SetColor(SKColors.Red);
-            else if (sender == BlueColorButton) SetColor(SKColors.Blue);
-            else if (sender == GreenColorButton) SetColor(SKColors.Green);
-            else if (sender == BlackColorButton) SetColor(SKColors.Black);
+            SKColor selectedColor;
+            if (sender == RedColorButton) selectedColor = SKColors.Red;
+            else if (sender == BlueColorButton) selectedColor = SKColors.Blue;
+            else if (sender == GreenColorButton) selectedColor = SKColors.Green;
+            else if (sender == BlackColorButton) selectedColor = SKColors.Black;
+            else return;
+
+            SetColor(selectedColor);
+
+            // If an item is selected, change its color
+            if (_selectedItem != null)
+            {
+                ChangeSelectedItemColor(selectedColor);
+            }
         }
 
         private void SetColor(SKColor color)
@@ -93,6 +103,26 @@ namespace MauiApp.Views
             BlueColorButton.Text = _currentColor == SKColors.Blue ? "✓" : "";
             GreenColorButton.Text = _currentColor == SKColors.Green ? "✓" : "";
             BlackColorButton.Text = _currentColor == SKColors.Black ? "✓" : "";
+        }
+
+        private void ChangeSelectedItemColor(SKColor newColor)
+        {
+            if (_selectedItem == null) return;
+
+            if (_selectedItem is PathDrawable pathDrawable)
+            {
+                pathDrawable.Color = newColor;
+            }
+            else if (_selectedItem is RectDrawable rectDrawable)
+            {
+                rectDrawable.Color = newColor;
+            }
+            else if (_selectedItem is TextDrawable textDrawable)
+            {
+                textDrawable.Color = newColor;
+            }
+
+            CanvasView.InvalidateSurface();
         }
 
         private void OnBrushSizeChanged(object sender, ValueChangedEventArgs e)
@@ -112,7 +142,7 @@ namespace MauiApp.Views
             else if (sender == CheckToolButton) _currentTool = ToolMode.Check;
             else if (sender == CrossToolButton) _currentTool = ToolMode.Cross;
 
-            _selectedItem = null;
+            // Don't clear selection when switching tools - keep it for deletion
             UpdateToolSelectionUI();
         }
 
@@ -164,6 +194,27 @@ namespace MauiApp.Views
                 var redo = _undoStack.Pop();
                 _items.Add(redo);
                 CanvasView.InvalidateSurface();
+            }
+        }
+
+        private void OnDeleteClicked(object sender, EventArgs e)
+        {
+            if (_selectedItem != null)
+            {
+                _items.Remove(_selectedItem);
+                _selectedItem = null;
+                CanvasView.InvalidateSurface();
+            }
+            else
+            {
+                // If nothing selected, try to select the last item
+                if (_items.Count > 0)
+                {
+                    _selectedItem = _items.Last();
+                    _items.Remove(_selectedItem);
+                    _selectedItem = null;
+                    CanvasView.InvalidateSurface();
+                }
             }
         }
 
@@ -387,13 +438,8 @@ namespace MauiApp.Views
                     if (_activeTouches.Count == 1)
                     {
                         var hit = HitTestItem(pt);
-                        if (hit != null && (_currentTool != ToolMode.Brush && _currentTool != ToolMode.Eraser && _currentTool != ToolMode.Text))
-                        {
-                            _selectedItem = hit;
-                            _isDraggingItem = true;
-                            _lastDragPoint = pt;
-                        }
-                        else if (_currentTool == ToolMode.Brush)
+                        
+                        if (_currentTool == ToolMode.Brush)
                         {
                             _currentPath = new SKPath();
                             _currentPath.MoveTo(pt);
@@ -418,6 +464,7 @@ namespace MauiApp.Views
                                 _lastDragPoint = pt;
                                 _isDraggingItem = true;
                                 _textPressPoint = pt;
+                                CanvasView.InvalidateSurface(); // Update to show selection
                             }
                             else
                             {
@@ -425,12 +472,28 @@ namespace MauiApp.Views
                                 _selectedItem = null;
                                 _isDraggingItem = false;
                                 _textPressPoint = pt;
+                                CanvasView.InvalidateSurface(); // Clear selection
                             }
                         }
                         else
                         {
-                            _startPoint = pt;
-                            _tempShape = CreateShapeItem(_currentTool, _startPoint, pt, _currentColor, _brushSize);
+                            // For shape tools (Arrow, Circle, Square, Check, Cross)
+                            if (hit != null)
+                            {
+                                // Select and allow dragging
+                                _selectedItem = hit;
+                                _isDraggingItem = true;
+                                _lastDragPoint = pt;
+                                CanvasView.InvalidateSurface(); // Show selection corners
+                            }
+                            else
+                            {
+                                // No item hit - clear selection and create new shape
+                                _selectedItem = null;
+                                _startPoint = pt;
+                                _tempShape = CreateShapeItem(_currentTool, _startPoint, pt, _currentColor, _brushSize);
+                                CanvasView.InvalidateSurface(); // Clear selection and show temp shape
+                            }
                         }
                     }
                     else if (_activeTouches.Count == 2 && _selectedItem != null)
@@ -555,11 +618,14 @@ namespace MauiApp.Views
                         {
                             _items.Add(_tempShape);
                             _tempShape = null;
+                            // Clear selection after adding new shape
+                            _selectedItem = null;
                         }
 
                         _initialDistance = 0f;
                         _initialRotation = 0f;
-                        _selectedItem = null;
+                        // Don't clear _selectedItem here - keep it for deletion
+                        // Only clear if we just added a new shape (handled above)
 
                         CanvasView.InvalidateSurface();
                     }
@@ -642,6 +708,12 @@ namespace MauiApp.Views
                 item.Draw(canvas);
 
             _tempShape?.Draw(canvas);
+
+            // Draw selection indicators (corners) for selected item
+            if (_selectedItem != null)
+            {
+                DrawSelectionCorners(canvas, _selectedItem.GetBounds());
+            }
         }
 
         private SKRect FitRectToCanvas(int imgW, int imgH, int cw, int ch)
@@ -650,6 +722,34 @@ namespace MauiApp.Views
             float w = imgW * ratio, h = imgH * ratio;
             float l = (cw - w) / 2, t = (ch - h) / 2;
             return new SKRect(l, t, l + w, t + h);
+        }
+
+        private void DrawSelectionCorners(SKCanvas canvas, SKRect bounds)
+        {
+            const float cornerRadius = 14f; // Larger radius for better visibility
+            
+            using var paint = new SKPaint
+            {
+                Color = SKColors.Blue,
+                Style = SKPaintStyle.Fill, // Solid fill instead of stroke
+                IsAntialias = true
+            };
+
+            // Expand bounds slightly for better visibility
+            var expanded = bounds;
+            expanded.Inflate(2, 2);
+
+            // Top-left corner
+            canvas.DrawCircle(expanded.Left, expanded.Top, cornerRadius, paint);
+            
+            // Top-right corner
+            canvas.DrawCircle(expanded.Right, expanded.Top, cornerRadius, paint);
+            
+            // Bottom-left corner
+            canvas.DrawCircle(expanded.Left, expanded.Bottom, cornerRadius, paint);
+            
+            // Bottom-right corner
+            canvas.DrawCircle(expanded.Right, expanded.Bottom, cornerRadius, paint);
         }
 
         // ---------------- Drawable Interface ----------------
@@ -676,7 +776,7 @@ namespace MauiApp.Views
         private class PathDrawable : IDrawableItem
         {
             public SKPath Path { get; private set; }
-            public SKColor Color { get; private set; }
+            public SKColor Color { get; set; }
             public float Stroke { get; private set; }
             public bool IsEraser { get; private set; }
 
@@ -713,7 +813,7 @@ namespace MauiApp.Views
         private class RectDrawable : RotatableDrawable
         {
             public SKRect Rect;
-            public SKColor Color;
+            public SKColor Color { get; set; }
             public float Stroke;
 
             public RectDrawable(SKRect r, SKColor c, float s) { Rect = r; Color = c; Stroke = s; }
@@ -844,7 +944,7 @@ namespace MauiApp.Views
         {
             public string Text { get; set; }
             public SKPoint Position { get; private set; }
-            public SKColor Color { get; private set; }
+            public SKColor Color { get; set; }
             public float FontSize { get; private set; }
             private readonly float _originalFontSize;
             private const float MinTextScale = 0.3f;
@@ -956,3 +1056,4 @@ namespace MauiApp.Views
         private enum ToolMode { Brush, Eraser, Arrow, Circle, Square, Check, Cross, Text }
     }
 }
+

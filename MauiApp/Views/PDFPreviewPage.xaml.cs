@@ -17,15 +17,17 @@ namespace MauiApp.Views
     public partial class PDFPreviewPage : ContentPage
     {
         private readonly List<ReportImage> _reportImages;
-        private int _imagesPerPage = 6; // 2x3 grid
+        private int _imagesPerPage = 6; // Default 2x3 grid
         private readonly IReportImageService _reportImageService;
         private readonly IPDFGeneratorService _pdfGeneratorService;
+        private readonly IReportStorageService _reportStorageService;
 
         public PDFPreviewPage()
         {
             InitializeComponent();
             _reportImageService = ServiceHelper.GetService<IReportImageService>();
             _pdfGeneratorService = ServiceHelper.GetService<IPDFGeneratorService>();
+            _reportStorageService = ServiceHelper.GetService<IReportStorageService>();
             _reportImages = _reportImageService.ReportImages.ToList();
             BuildPreviewPages();
             UpdateUI();
@@ -126,16 +128,38 @@ namespace MauiApp.Views
             };
 
             // 3 rows � 2 columns
-            for (int i = 0; i < 3; i++)
-                imageGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            for (int j = 0; j < 2; j++)
-                imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            for (int i = 0; i < images.Count && i < 6; i++)
+            // Calculate grid layout based on number of images
+            int imageCount = images.Count;
+            
+            if (imageCount == 1)
             {
-                var row = i / 2;
-                var col = i % 2;
-                imageGrid.Add(CreateImageBlock(images[i], i + 1), col, row);
+                // Single image - center it
+                imageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                imageGrid.HorizontalOptions = LayoutOptions.Center;
+                imageGrid.VerticalOptions = LayoutOptions.Center;
+                
+                // Add image block directly - it will be centered in the grid
+                imageGrid.Add(CreateImageBlock(images[0], 1), 0, 0);
+            }
+            else
+            {
+                // Multiple images - create dynamic grid
+                // Always use 2 columns, calculate rows needed
+                int columns = 2;
+                int rows = (int)Math.Ceiling((double)imageCount / columns);
+                
+                for (int i = 0; i < rows; i++)
+                    imageGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                for (int j = 0; j < columns; j++)
+                    imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                for (int i = 0; i < imageCount; i++)
+                {
+                    var row = i / columns;
+                    var col = i % columns;
+                    imageGrid.Add(CreateImageBlock(images[i], i + 1), col, row);
+                }
             }
 
             pageContainer.Add(imageGrid, 0, 1);
@@ -258,7 +282,7 @@ namespace MauiApp.Views
         {
             if (_imagesPerPage < 12)
             {
-                _imagesPerPage += 2;
+                _imagesPerPage += 1;
                 UpdateUI();
                 BuildPreviewPages();
             }
@@ -266,9 +290,9 @@ namespace MauiApp.Views
 
         private async void OnDecreaseImagesPerPage(object sender, EventArgs e)
         {
-            if (_imagesPerPage > 2)
+            if (_imagesPerPage > 1)
             {
-                _imagesPerPage -= 2;
+                _imagesPerPage -= 1;
                 UpdateUI();
                 BuildPreviewPages();
             }
@@ -291,6 +315,18 @@ namespace MauiApp.Views
                 
                 if (!string.IsNullOrEmpty(pdfPath) && File.Exists(pdfPath))
                 {
+                    // Update progress message
+                    if (ProgressOverlay != null)
+                    {
+                        ProgressLabel.Text = "Saving report...";
+                    }
+
+                    // Save report locally for persistence
+                    await _reportStorageService.SaveReportAsync(pdfPath, _reportImages.Count, _imagesPerPage);
+
+                    // Clear report images after successful save
+                    _reportImageService.ClearAllImages();
+
                     // Hide progress overlay
                     if (ProgressOverlay != null)
                     {
@@ -298,15 +334,11 @@ namespace MauiApp.Views
                         ProgressIndicator.IsRunning = false;
                     }
 
-                    // Share the PDF
-                    await Share.Default.RequestAsync(new ShareFileRequest
-                    {
-                        File = new ShareFile(pdfPath),
-                        Title = "Share Report PDF"
-                    });
+                    // Show success message
+                    await DisplayAlert("Success", "Report published successfully!", "OK");
 
-                    // Navigate back
-                    await Navigation.PopAsync();
+                    // Navigate to landing page (MainPage)
+                    await Shell.Current.GoToAsync("//MainPage");
                 }
                 else
                 {

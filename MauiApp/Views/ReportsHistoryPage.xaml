@@ -8,7 +8,7 @@
 
     <Grid>
 
-        <!-- 🔸 Background Gradient -->
+        <!-- Background Gradient -->
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -18,7 +18,7 @@
             </BoxView.Background>
         </BoxView>
 
-        <!-- 🔹 Header -->
+        <!-- Header -->
         <Grid HeightRequest="120"
               VerticalOptions="Start"
               HorizontalOptions="FillAndExpand">
@@ -35,7 +35,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- ⬅️ Back Button -->
+                <!-- Back Button -->
                 <Image Grid.Column="0"
                        Source="ic_arrow_back.svg"
                        WidthRequest="22"
@@ -57,7 +57,7 @@
             </Grid>
         </Grid>
 
-        <!-- 🧾 Reports List -->
+        <!-- Reports List -->
         <ScrollView Margin="0,110,0,0"
                     Padding="15,10,15,80">
             <CollectionView x:Name="ReportsCollectionView"
@@ -68,69 +68,108 @@
                     <LinearItemsLayout Orientation="Vertical"
                                        ItemSpacing="10" />
                 </CollectionView.ItemsLayout>
+
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Frame BackgroundColor="White"
-                               CornerRadius="12"
-                               Padding="12"
-                               HasShadow="True">
-                            <Grid ColumnDefinitions="Auto,*,Auto"
-                                  ColumnSpacing="10">
+                        <!-- Modern Card with soft beige color and integrated corner button -->
+                        <Border StrokeThickness="0"
+                                BackgroundColor="#FFF9E6"
+                                StrokeShape="RoundRectangle 18,18,18,18"
+                                Margin="0,5">
 
-                                <!-- 📄 PDF Icon -->
-                                <Image Grid.Column="0"
+                            <Border.Shadow>
+                                <Shadow Radius="5"
+                                        Offset="2,2"
+                                        Opacity="0.15"
+                                        Brush="Black" />
+                            </Border.Shadow>
+
+                            <Grid ColumnDefinitions="Auto,*"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  ColumnSpacing="10"
+                                  Padding="12">
+
+                                <!-- PDF Icon -->
+                                <Image Grid.RowSpan="3"
+                                       Grid.Column="0"
                                        Source="ic_pdf_icon.png"
-                                       WidthRequest="28"
-                                       HeightRequest="28"
-                                       VerticalOptions="Center" />
+                                       WidthRequest="26"
+                                       HeightRequest="26"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Start" />
 
-                                <!-- 📘 Report Info -->
-                                <StackLayout Grid.Column="1"
-                                             Spacing="3"
-                                             VerticalOptions="Center">
-                                    <Label Text="{Binding FileName}"
-                                           FontSize="15"
+                                <!-- Report Info -->
+                                <Label Grid.Column="1"
+                                       Grid.Row="0"
+                                       Text="{Binding FileName}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="Black"
+                                       LineBreakMode="TailTruncation" />
+
+                                <Label Grid.Column="1"
+                                       Grid.Row="1"
+                                       Text="{Binding CreatedDate, StringFormat='Generated: {0:MMM dd, yyyy • HH:mm}'}"
+                                       FontSize="13"
+                                       TextColor="#666" />
+
+                                <Label Grid.Column="1"
+                                       Grid.Row="2"
+                                       Text="{Binding ImageCount, StringFormat='{0} images'}"
+                                       FontSize="12"
+                                       TextColor="#999" />
+
+                                <!-- SHARE BUTTON - Integrated with card corner -->
+                                <Border Grid.Row="2"
+                                        Grid.Column="1"
+                                        BackgroundColor="#FF6B5A"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 0,10,18,18"
+                                        Padding="8"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="End"
+                                        Margin="0,-12,-12,-12">
+
+                                    <Border.Shadow>
+                                        <Shadow Radius="3" Offset="1,1" Opacity="0.25" Brush="Black" />
+                                    </Border.Shadow>
+
+                                    <Label Text="↗"
+                                           FontSize="22"
                                            FontAttributes="Bold"
-                                           TextColor="Black"
-                                           LineBreakMode="TailTruncation" />
-                                    <Label Text="{Binding CreatedDate, StringFormat='Generated: {0:MMM dd, yyyy • HH:mm}'}"
-                                           FontSize="13"
-                                           TextColor="#666" />
-                                    <Label Text="{Binding ImageCount, StringFormat='{0} images'}"
-                                           FontSize="12"
-                                           TextColor="#999" />
-                                </StackLayout>
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                    
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            CommandParameter="{Binding FilePath}"
+                                            Tapped="OnShareReportClicked" />
+                                    </Border.GestureRecognizers>
+                                </Border>
 
-                                <!-- 🎯 Action Icons -->
-                                <StackLayout Grid.Column="2"
-                                             Orientation="Horizontal"
-                                             Spacing="12"
-                                             VerticalOptions="Center">
+                                <!-- Ripple Effect -->
+                                <BoxView Grid.ColumnSpan="2"
+                                         Grid.RowSpan="3"
+                                         BackgroundColor="#FFFFE5D9"
+                                         Opacity="0"
+                                         InputTransparent="True" />
 
-                                    <!-- 👁 View Icon -->
-                                    <ImageButton Source="ic_eye_icon.png"
-                                                 BackgroundColor="Transparent"
-                                                 WidthRequest="24"
-                                                 HeightRequest="24"
-                                                 Clicked="OnViewReportClicked"
-                                                 CommandParameter="{Binding FilePath}" />
+                                <!-- Tap Gesture for Card -->
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        CommandParameter="{Binding FilePath}"
+                                        Tapped="OnReportCardTapped" />
+                                </Grid.GestureRecognizers>
 
-                                    <!-- 🔗 Share Icon -->
-                                    <ImageButton Source="ic_share_icon.png"
-                                                 BackgroundColor="Transparent"
-                                                 WidthRequest="24"
-                                                 HeightRequest="24"
-                                                 Clicked="OnShareReportClicked"
-                                                 CommandParameter="{Binding FilePath}" />
-                                </StackLayout>
                             </Grid>
-                        </Frame>
+                        </Border>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </ScrollView>
 
-        <!-- 📄 Empty State -->
+        <!-- Empty State -->
         <Frame x:Name="EmptyStateFrame"
                BackgroundColor="White"
                CornerRadius="12"
@@ -158,7 +197,8 @@
             </StackLayout>
         </Frame>
 
-        <!-- 🔘 Bottom Button -->
+
+        <!-- Bottom Button -->
         <Frame VerticalOptions="End"
                BackgroundColor="Transparent"
                Padding="20,15"

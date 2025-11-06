@@ -21,3 +21,6 @@ namespace MauiApp.Core.Models
 
 
 
+
+
+

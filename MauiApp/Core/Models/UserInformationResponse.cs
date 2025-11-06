@@ -48,3 +48,6 @@ namespace MauiApp.Core.Models
 
 
 
+
+
+

@@ -4,6 +4,8 @@ using MauiApp.Core.Models;
 using Microsoft.Maui.Platform;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Microsoft.Maui.ApplicationModel;
+using System.Linq;
 #if ANDROID
 using AndroidX.AppCompat.App;
 using Android.OS;
@@ -159,35 +161,38 @@ public partial class ReportsHistoryPage : ContentPage
     {
         try
         {
-            if (sender is Button button && button.CommandParameter is string filePath)
+            string? filePath = null;
+
+            // Handle different sender types
+            if (sender is Button button && button.CommandParameter is string btnPath)
             {
-                if (File.Exists(filePath))
-                {
-                    await Share.Default.RequestAsync(new ShareFileRequest
-                    {
-                        File = new ShareFile(filePath),
-                        Title = "Share PDF Report"
-                    });
-                }
-                else
-                {
-                    await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
-                }
+                filePath = btnPath;
             }
-            else if (sender is ImageButton imageButton && imageButton.CommandParameter is string imagePath)
+            else if (sender is ImageButton imageButton && imageButton.CommandParameter is string imgPath)
             {
-                if (File.Exists(imagePath))
+                filePath = imgPath;
+            }
+            else if (sender is Border border && e is TappedEventArgs tappedArgs)
+            {
+                // Handle Border with TapGestureRecognizer
+                filePath = tappedArgs.Parameter as string;
+            }
+            else if (e is TappedEventArgs tappedEventArgs)
+            {
+                filePath = tappedEventArgs.Parameter as string;
+            }
+
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                await Share.Default.RequestAsync(new ShareFileRequest
                 {
-                    await Share.Default.RequestAsync(new ShareFileRequest
-                    {
-                        File = new ShareFile(imagePath),
-                        Title = "Share PDF Report"
-                    });
-                }
-                else
-                {
-                    await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
-                }
+                    File = new ShareFile(filePath),
+                    Title = "Share PDF Report"
+                });
+            }
+            else
+            {
+                await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
             }
         }
         catch (Exception ex)
@@ -227,6 +232,69 @@ public partial class ReportsHistoryPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("Error", $"Failed to navigate to Add Report page: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnReportCardTapped(object sender, TappedEventArgs e)
+    {
+        try
+        {
+            // Find the ripple overlay BoxView for the ripple animation
+            Grid? grid = null;
+            
+            if (sender is Grid g)
+            {
+                grid = g;
+            }
+            else if (sender is VisualElement element)
+            {
+                // Try to find the parent Grid
+                var parent = element.Parent;
+                while (parent != null && grid == null)
+                {
+                    if (parent is Grid g2)
+                    {
+                        grid = g2;
+                        break;
+                    }
+                    parent = parent.Parent;
+                }
+            }
+
+            if (grid != null)
+            {
+                var rippleOverlay = grid.Children.OfType<BoxView>().FirstOrDefault();
+                if (rippleOverlay != null)
+                {
+                    // Animate the ripple effect (orange pulse)
+                    _ = rippleOverlay.FadeTo(0.6, 75, Easing.CubicOut)
+                        .ContinueWith(async _ =>
+                        {
+                            await rippleOverlay.FadeTo(0, 75, Easing.CubicIn);
+                        });
+                }
+            }
+
+            // Open the PDF file
+            if (e.Parameter is string filePath && File.Exists(filePath))
+            {
+                // Small delay to let ripple animation start
+                await Task.Delay(50);
+                
+                // Open the PDF file with default viewer
+                await Launcher.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(filePath)
+                });
+            }
+            else
+            {
+                await DisplayAlert("File Not Found", "The PDF file could not be found.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to open PDF: {ex.Message}", "OK");
         }
     }
 }

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <resources>
+    <!-- BottomNavigationView widget style with required TextAppearance -->
+    <style name="Widget.App.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemTextAppearance">@style/TextAppearance.MaterialComponents.Caption</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.MaterialComponents.Caption</item>
+        <item name="itemIconTint">?attr/colorControlNormal</item>
+    </style>
+
     <style name="MainTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -9,6 +16,8 @@
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">false</item>
+        <!-- Material Components BottomNavigationView requires explicit style -->
+        <item name="bottomNavigationStyle">@style/Widget.App.BottomNavigationView</item>
     </style>
     
     <style name="Maui.SplashTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
@@ -17,5 +26,7 @@
         <item name="android:navigationBarColor">@color/navigationBarColor</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">@color/colorPrimary</item>
+        <!-- Material Components BottomNavigationView requires explicit style -->
+        <item name="bottomNavigationStyle">@style/Widget.App.BottomNavigationView</item>
     </style>
 </resources>

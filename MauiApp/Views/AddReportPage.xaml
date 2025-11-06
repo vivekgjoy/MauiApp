@@ -30,11 +30,10 @@
                 <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Padding="10,0,15,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <Image Grid.Column="0"
@@ -54,8 +53,7 @@
                        FontAttributes="Bold"
                        TextColor="White"
                        HorizontalOptions="Center"
-                       VerticalOptions="Center"
-                       HorizontalTextAlignment="Center"/>
+                       VerticalOptions="Center" />
             </Grid>
         </Grid>
 
