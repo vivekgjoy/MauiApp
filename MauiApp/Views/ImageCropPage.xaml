@@ -22,7 +22,11 @@
                     Stroke="{StaticResource PrimaryRed}"
                     StrokeThickness="2"
                     AbsoluteLayout.LayoutBounds="50,50,250,350"
-                    AbsoluteLayout.LayoutFlags="None" />
+                    AbsoluteLayout.LayoutFlags="None">
+                <Border.GestureRecognizers>
+                    <PanGestureRecognizer PanUpdated="OnHandlePanUpdated" />
+                </Border.GestureRecognizers>
+            </Border>
 
             <!-- Top Left Handle -->
             <Frame x:Name="TopLeftHandle"

@@ -257,82 +257,118 @@ namespace MauiApp.Views
                 if (string.IsNullOrEmpty(_imagePath))
                     return null;
 
-                using var originalStream = File.OpenRead(_imagePath);
-                using var originalBitmap = SKBitmap.Decode(originalStream);
+                SKEncodedOrigin orientation = SKEncodedOrigin.TopLeft;
+                int rawWidth = 0, rawHeight = 0;
+                SKBitmap? originalBitmap = null;
 
-                // Create output bitmap at original image resolution
-                using var editedBitmap = new SKBitmap(originalBitmap.Width, originalBitmap.Height);
-                using var canvas = new SKCanvas(editedBitmap);
+                using (var stream = File.OpenRead(_imagePath))
+                {
+                    using var codec = SKCodec.Create(stream);
+                    if (codec == null) return null;
+
+                    orientation = codec.EncodedOrigin;
+                    var info = codec.Info;
+                    rawWidth = info.Width;
+                    rawHeight = info.Height;
+
+                    stream.Position = 0;
+                    originalBitmap = SKBitmap.Decode(stream);
+                    if (originalBitmap == null) return null;
+                }
+
+                bool isRotated = orientation == SKEncodedOrigin.LeftTop ||
+                                 orientation == SKEncodedOrigin.RightTop ||
+                                 orientation == SKEncodedOrigin.LeftBottom ||
+                                 orientation == SKEncodedOrigin.RightBottom;
+
+                int finalWidth = isRotated ? rawHeight : rawWidth;
+                int finalHeight = isRotated ? rawWidth : rawHeight;
+
+                var displayedRect = GetImageBounds();
+                if (!displayedRect.HasValue) return null;
+
+                var displayRect = displayedRect.Value;
+
+                using var finalBitmap = new SKBitmap(finalWidth, finalHeight);
+                using var canvas = new SKCanvas(finalBitmap);
                 canvas.Clear(SKColors.White);
-                canvas.DrawBitmap(originalBitmap, 0, 0);
 
-                // Calculate the scaling ratio between CanvasView and original image
-                var viewWidth = (float)CanvasView.CanvasSize.Width;
-                var viewHeight = (float)CanvasView.CanvasSize.Height;
-
-                float scaleX = originalBitmap.Width / viewWidth;
-                float scaleY = originalBitmap.Height / viewHeight;
-
-                // Apply the same transformation to each drawn item
                 canvas.Save();
+                ApplyExifOrientation(canvas, orientation, finalWidth, finalHeight);
+                var imageDestRect = FitRectToCanvas(originalBitmap.Width, originalBitmap.Height, finalWidth, finalHeight);
+                canvas.DrawBitmap(originalBitmap, imageDestRect);
+                canvas.Restore();
+
+                canvas.Save();
+
+                canvas.Translate(-displayRect.Left, -displayRect.Top);
+                float scaleX = imageDestRect.Width / displayRect.Width;
+                float scaleY = imageDestRect.Height / displayRect.Height;
                 canvas.Scale(scaleX, scaleY);
+                ApplyExifOrientation(canvas, orientation, finalWidth, finalHeight);
+                canvas.Translate(imageDestRect.Left, imageDestRect.Top);
 
                 foreach (var item in _items)
                     item.Draw(canvas);
 
                 canvas.Restore();
 
-                // Save as JPEG
                 var cachePath = FileSystem.CacheDirectory;
                 var fileName = $"edited_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
                 var fullPath = Path.Combine(cachePath, fileName);
 
-                using var image = SKImage.FromBitmap(editedBitmap);
-                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
-                using var stream = File.Create(fullPath);
-                data.SaveTo(stream);
+                using var image = SKImage.FromBitmap(finalBitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 95);
+                using var fileStream = File.Create(fullPath);
+                data.SaveTo(fileStream);
 
                 return fullPath;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving edited image: {ex.Message}");
+                Console.WriteLine($"Save error: {ex}");
                 return null;
             }
         }
+        private void ApplyExifOrientation(SKCanvas canvas, SKEncodedOrigin origin, int width, int height)
+        {
+            float centerX = width / 2f;
+            float centerY = height / 2f;
+            canvas.Translate(centerX, centerY);
 
-        //private async Task<string?> SaveEditedImage()
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(_imagePath))
-        //            return null;
+            switch (origin)
+            {
+                case SKEncodedOrigin.TopRight:
+                    canvas.Scale(-1, 1);
+                    break;
+                case SKEncodedOrigin.BottomRight:
+                    canvas.RotateDegrees(180);
+                    break;
+                case SKEncodedOrigin.BottomLeft:
+                    canvas.RotateDegrees(180);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SKEncodedOrigin.LeftTop:
+                    canvas.RotateDegrees(-90);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SKEncodedOrigin.RightTop:
+                    canvas.RotateDegrees(90);
+                    break;
+                case SKEncodedOrigin.RightBottom:
+                    canvas.RotateDegrees(90);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SKEncodedOrigin.LeftBottom:
+                    canvas.RotateDegrees(-90);
+                    break;
+                case SKEncodedOrigin.TopLeft:
+                default:
+                    break;
+            }
 
-        //        using var originalStream = File.OpenRead(_imagePath);
-        //        using var originalBitmap = SKBitmap.Decode(originalStream);
-        //        using var editedBitmap = new SKBitmap(originalBitmap.Width, originalBitmap.Height);
-        //        using var canvas = new SKCanvas(editedBitmap);
-
-        //        canvas.DrawBitmap(originalBitmap, 0, 0);
-        //        foreach (var item in _items)
-        //            item.Draw(canvas);
-
-        //        var cachePath = FileSystem.CacheDirectory;
-        //        var fileName = $"edited_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-        //        var fullPath = Path.Combine(cachePath, fileName);
-
-        //        using var image = SKImage.FromBitmap(editedBitmap);
-        //        using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
-        //        using var stream = File.Create(fullPath);
-        //        data.SaveTo(stream);
-
-        //        return fullPath;
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-        //}
+            canvas.Translate(-centerX, -centerY);
+        }
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
@@ -413,14 +449,15 @@ namespace MauiApp.Views
                     _editingTextItem.Text = text;
                     _editingTextItem = null;
                 }
-                else
-                {
-                    // Add new text
-                    var newItem = new TextDrawable(text, _textPosition, _currentColor, _brushSize * 10);
-                    _items.Add(newItem);
-                    _undoStack.Clear(); 
-                    _redoStack.Clear();
-                }
+                        else
+                        {
+                            // Add new text - constrain position to image bounds
+                            var constrainedPosition = ConstrainPointToImage(_textPosition);
+                            var newItem = new TextDrawable(text, constrainedPosition, _currentColor, _brushSize * 10, GetImageBounds);
+                            _items.Add(newItem);
+                            _undoStack.Clear(); 
+                            _redoStack.Clear();
+                        }
                 CanvasView.InvalidateSurface();
             }
             await HideTextPopup();
@@ -499,9 +536,19 @@ namespace MauiApp.Views
                     else if (_activeTouches.Count == 2 && _selectedItem != null)
                     {
                         var pts = _activeTouches.Values.ToList();
-                        _initialDistance = Distance(pts[0], pts[1]);
-                        _initialRotation = GetAngle(pts[0], pts[1]);
-                        _originalBounds = _selectedItem.GetBounds();
+                        var currentDistance = Distance(pts[0], pts[1]);
+                        
+                        // Initialize if this is the first time two fingers are detected
+                        if (_initialDistance <= 0f)
+                        {
+                            _initialDistance = currentDistance != 0f ? currentDistance : 1f;
+                            _originalBounds = _selectedItem.GetBounds();
+                            // Get initial angle and normalize it
+                            _initialRotation = GetAngle(pts[0], pts[1]);
+                            // Normalize to -PI to PI range
+                            while (_initialRotation > Math.PI) _initialRotation -= 2 * (float)Math.PI;
+                            while (_initialRotation < -Math.PI) _initialRotation += 2 * (float)Math.PI;
+                        }
                     }
                     break;
 
@@ -517,6 +564,44 @@ namespace MauiApp.Views
                             var dx = only.X - _lastDragPoint.X;
                             var dy = only.Y - _lastDragPoint.Y;
                             _selectedItem.Translate(dx, dy);
+                            
+                            // Constrain the item to image bounds after translation
+                            var imageBounds = GetImageBounds();
+                            if (imageBounds.HasValue)
+                            {
+                                var bounds = _selectedItem.GetBounds();
+                                var imgBounds = imageBounds.Value;
+                                
+                                // Constrain horizontally - check right edge first
+                                if (bounds.Right > imgBounds.Right)
+                                {
+                                    var offsetX = imgBounds.Right - bounds.Right;
+                                    _selectedItem.Translate(offsetX, 0);
+                                    bounds = _selectedItem.GetBounds();
+                                }
+                                // Then check left edge
+                                if (bounds.Left < imgBounds.Left)
+                                {
+                                    var offsetX = imgBounds.Left - bounds.Left;
+                                    _selectedItem.Translate(offsetX, 0);
+                                    bounds = _selectedItem.GetBounds();
+                                }
+                                
+                                // Constrain vertically - check bottom edge first
+                                if (bounds.Bottom > imgBounds.Bottom)
+                                {
+                                    var offsetY = imgBounds.Bottom - bounds.Bottom;
+                                    _selectedItem.Translate(0, offsetY);
+                                    bounds = _selectedItem.GetBounds();
+                                }
+                                // Then check top edge
+                                if (bounds.Top < imgBounds.Top)
+                                {
+                                    var offsetY = imgBounds.Top - bounds.Top;
+                                    _selectedItem.Translate(0, offsetY);
+                                }
+                            }
+                            
                             _lastDragPoint = only;
                             CanvasView.InvalidateSurface();
                         }
@@ -539,12 +624,47 @@ namespace MauiApp.Views
                             var dx = only.X - _lastDragPoint.X;
                             var dy = only.Y - _lastDragPoint.Y;
                             textItem.Translate(dx, dy);
+                            
+                            var imageBounds = GetImageBounds();
+                            if (imageBounds.HasValue)
+                            {
+                                var bounds = textItem.GetBounds();
+                                var imgBounds = imageBounds.Value;
+                                
+                                if (bounds.Right > imgBounds.Right)
+                                {
+                                    var offsetX = imgBounds.Right - bounds.Right;
+                                    textItem.Translate(offsetX, 0);
+                                    bounds = textItem.GetBounds();
+                                }
+                                if (bounds.Left < imgBounds.Left)
+                                {
+                                    var offsetX = imgBounds.Left - bounds.Left;
+                                    textItem.Translate(offsetX, 0);
+                                    bounds = textItem.GetBounds();
+                                }
+                                
+                                if (bounds.Bottom > imgBounds.Bottom)
+                                {
+                                    var offsetY = imgBounds.Bottom - bounds.Bottom;
+                                    textItem.Translate(0, offsetY);
+                                    bounds = textItem.GetBounds();
+                                }
+                                if (bounds.Top < imgBounds.Top)
+                                {
+                                    var offsetY = imgBounds.Top - bounds.Top;
+                                    textItem.Translate(0, offsetY);
+                                }
+                            }
+                            
                             _lastDragPoint = only;
                             CanvasView.InvalidateSurface();
                         }
                         else if (_tempShape != null)
                         {
-                            _tempShape.UpdateGeometry(_startPoint, only);
+                            // Constrain the end point to image bounds
+                            var constrainedEnd = ConstrainPointToImage(only);
+                            _tempShape.UpdateGeometry(_startPoint, constrainedEnd);
                             CanvasView.InvalidateSurface();
                         }
                     }
@@ -565,14 +685,121 @@ namespace MauiApp.Views
                         if (_selectedItem is TextDrawable textItem)
                         {
                             textItem.ScaleFromBounds(_originalBounds, scale);
+                            
+                            var imageBounds = GetImageBounds();
+                            if (imageBounds.HasValue)
+                            {
+                                var bounds = textItem.GetBounds();
+                                var imgBounds = imageBounds.Value;
+                                
+                                if (bounds.Right > imgBounds.Right)
+                                {
+                                    var offsetX = imgBounds.Right - bounds.Right;
+                                    textItem.Translate(offsetX, 0);
+                                    bounds = textItem.GetBounds();
+                                }
+                                if (bounds.Left < imgBounds.Left)
+                                {
+                                    var offsetX = imgBounds.Left - bounds.Left;
+                                    textItem.Translate(offsetX, 0);
+                                    bounds = textItem.GetBounds();
+                                }
+                                
+                                if (bounds.Bottom > imgBounds.Bottom)
+                                {
+                                    var offsetY = imgBounds.Bottom - bounds.Bottom;
+                                    textItem.Translate(0, offsetY);
+                                    bounds = textItem.GetBounds();
+                                }
+                                if (bounds.Top < imgBounds.Top)
+                                {
+                                    var offsetY = imgBounds.Top - bounds.Top;
+                                    textItem.Translate(0, offsetY);
+                                }
+                            }
+                            
                             CanvasView.InvalidateSurface();
                         }
                         else if (_selectedItem is RotatableDrawable rot)
                         {
                             var newAngle = GetAngle(pts[0], pts[1]);
                             var rotationDelta = newAngle - _initialRotation;
-                            rot.ScaleFromBounds(_originalBounds, scale);
-                            rot.ApplyRotation(rotationDelta);
+                            
+                            // Apply smoothing to rotation for smoother experience
+                            // Limit rotation delta to prevent sudden jumps
+                            if (Math.Abs(rotationDelta) > Math.PI)
+                            {
+                                // Handle angle wrap-around
+                                if (rotationDelta > Math.PI)
+                                    rotationDelta -= 2 * (float)Math.PI;
+                                else if (rotationDelta < -Math.PI)
+                                    rotationDelta += 2 * (float)Math.PI;
+                            }
+                            
+                            // Apply smoothing factor to make rotation slower and smoother
+                            // Use a damping factor (0.4 = 40% of rotation applied per frame, making it smoother)
+                            const float rotationSmoothingFactor = 0.4f;
+                            
+                            // Only apply rotation if it's significant enough to avoid jitter
+                            if (Math.Abs(rotationDelta) > 0.005f)
+                            {
+                                // Apply smoothed rotation
+                                var smoothedDelta = rotationDelta * rotationSmoothingFactor;
+                                
+                                rot.ScaleFromBounds(_originalBounds, scale);
+                                rot.ApplyRotation(smoothedDelta);
+                                
+                                // Update initial rotation to track the smoothed position
+                                // This creates a lagged response that feels smoother
+                                _initialRotation += smoothedDelta;
+                                
+                                // Normalize initial rotation to prevent accumulation
+                                while (_initialRotation > Math.PI) _initialRotation -= 2 * (float)Math.PI;
+                                while (_initialRotation < -Math.PI) _initialRotation += 2 * (float)Math.PI;
+                            }
+                            else
+                            {
+                                // Still apply scaling even if rotation is too small
+                                rot.ScaleFromBounds(_originalBounds, scale);
+                            }
+                            
+                            // Constrain the shape to image bounds after scaling
+                            var imageBounds = GetImageBounds();
+                            if (imageBounds.HasValue)
+                            {
+                                var bounds = rot.GetBounds();
+                                var imgBounds = imageBounds.Value;
+                                
+                                // Constrain horizontally - check right edge first
+                                if (bounds.Right > imgBounds.Right)
+                                {
+                                    var offsetX = imgBounds.Right - bounds.Right;
+                                    rot.Translate(offsetX, 0);
+                                    bounds = rot.GetBounds();
+                                }
+                                // Then check left edge
+                                if (bounds.Left < imgBounds.Left)
+                                {
+                                    var offsetX = imgBounds.Left - bounds.Left;
+                                    rot.Translate(offsetX, 0);
+                                    bounds = rot.GetBounds();
+                                }
+                                
+                                // Constrain vertically - check bottom edge first
+                                if (bounds.Bottom > imgBounds.Bottom)
+                                {
+                                    var offsetY = imgBounds.Bottom - bounds.Bottom;
+                                    rot.Translate(0, offsetY);
+                                    bounds = rot.GetBounds();
+                                }
+                                // Then check top edge
+                                if (bounds.Top < imgBounds.Top)
+                                {
+                                    var offsetY = imgBounds.Top - bounds.Top;
+                                    rot.Translate(0, offsetY);
+                                }
+                            }
+                            
                             CanvasView.InvalidateSurface();
                         }
                     }
@@ -599,7 +826,7 @@ namespace MauiApp.Views
                                 else
                                 {
                                     _editingTextItem = null;
-                                    _textPosition = pt;
+                                    _textPosition = ConstrainPointToImage(pt);
                                     await ShowTextPopup("Add Text");
                                 }
                             });
@@ -616,6 +843,43 @@ namespace MauiApp.Views
 
                         if (_tempShape != null)
                         {
+                            // Constrain the shape to image bounds before adding
+                            var imageBounds = GetImageBounds();
+                            if (imageBounds.HasValue)
+                            {
+                                var bounds = _tempShape.GetBounds();
+                                var imgBounds = imageBounds.Value;
+                                
+                                // Constrain horizontally - check right edge first
+                                if (bounds.Right > imgBounds.Right)
+                                {
+                                    var offsetX = imgBounds.Right - bounds.Right;
+                                    _tempShape.Translate(offsetX, 0);
+                                    bounds = _tempShape.GetBounds();
+                                }
+                                // Then check left edge
+                                if (bounds.Left < imgBounds.Left)
+                                {
+                                    var offsetX = imgBounds.Left - bounds.Left;
+                                    _tempShape.Translate(offsetX, 0);
+                                    bounds = _tempShape.GetBounds();
+                                }
+                                
+                                // Constrain vertically - check bottom edge first
+                                if (bounds.Bottom > imgBounds.Bottom)
+                                {
+                                    var offsetY = imgBounds.Bottom - bounds.Bottom;
+                                    _tempShape.Translate(0, offsetY);
+                                    bounds = _tempShape.GetBounds();
+                                }
+                                // Then check top edge
+                                if (bounds.Top < imgBounds.Top)
+                                {
+                                    var offsetY = imgBounds.Top - bounds.Top;
+                                    _tempShape.Translate(0, offsetY);
+                                }
+                            }
+                            
                             _items.Add(_tempShape);
                             _tempShape = null;
                             // Clear selection after adding new shape
@@ -631,9 +895,14 @@ namespace MauiApp.Views
                     }
                     else if (_activeTouches.Count == 1)
                     {
-                        var remaining = _activeTouches.Values.First();
-                        _initialDistance = 0f;
-                        _initialRotation = 0f;
+                        // One finger released but another still active - update original bounds to current state
+                        // and reset initial distance so the next resize starts from the current size
+                        if (_selectedItem != null)
+                        {
+                            _originalBounds = _selectedItem.GetBounds();
+                            _initialDistance = 0f; // Will be recalculated when second finger is pressed
+                            _initialRotation = 0f;
+                        }
                     }
                     break;
             }
@@ -670,8 +939,16 @@ namespace MauiApp.Views
 
         private IDrawableItem CreateShapeItem(ToolMode mode, SKPoint p1, SKPoint p2, SKColor color, float stroke)
         {
+            // Constrain points to image bounds
+            p1 = ConstrainPointToImage(p1);
+            p2 = ConstrainPointToImage(p2);
+            
             var rect = new SKRect(Math.Min(p1.X, p2.X), Math.Min(p1.Y, p2.Y),
                                   Math.Max(p1.X, p2.X), Math.Max(p1.Y, p2.Y));
+            
+            // Constrain the rectangle to image bounds
+            rect = ConstrainRectToImage(rect);
+            
             return mode switch
             {
                 ToolMode.Circle => new CircleDrawable(rect, color, stroke),
@@ -683,7 +960,7 @@ namespace MauiApp.Views
             };
         }
 
-        // ---------------- Drawing ----------------
+        // ---------------- Drawing ---------------- 
         private void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
@@ -694,14 +971,90 @@ namespace MauiApp.Views
                 try
                 {
                     using var stream = File.OpenRead(ImagePath);
-                    using var bmp = SKBitmap.Decode(stream);
-                    if (bmp != null)
+                    using var codec = SKCodec.Create(stream);
+                    if (codec != null)
                     {
-                        var rect = FitRectToCanvas(bmp.Width, bmp.Height, e.Info.Width, e.Info.Height);
-                        canvas.DrawBitmap(bmp, rect);
+                        var info = codec.Info;
+                        var orientation = codec.EncodedOrigin;
+                        
+                        // Determine the actual dimensions after rotation
+                        int width = info.Width;
+                        int height = info.Height;
+                        
+                        // Swap dimensions if rotated 90 or 270 degrees
+                        if (orientation == SKEncodedOrigin.LeftTop || orientation == SKEncodedOrigin.RightBottom ||
+                            orientation == SKEncodedOrigin.LeftBottom || orientation == SKEncodedOrigin.RightTop)
+                        {
+                            (width, height) = (height, width);
+                        }
+                        
+                        using var bmp = SKBitmap.Decode(codec);
+                        if (bmp != null)
+                        {
+                            var rect = FitRectToCanvas(width, height, e.Info.Width, e.Info.Height);
+                            
+                            canvas.Save();
+                            
+                            // Apply rotation based on EXIF orientation
+                            var centerX = rect.MidX;
+                            var centerY = rect.MidY;
+                            canvas.Translate(centerX, centerY);
+                            
+                            switch (orientation)
+                            {
+                                case SKEncodedOrigin.TopRight:
+                                    canvas.Scale(-1, 1);
+                                    break;
+                                case SKEncodedOrigin.BottomRight:
+                                    canvas.RotateDegrees(180);
+                                    break;
+                                case SKEncodedOrigin.BottomLeft:
+                                    canvas.RotateDegrees(180);
+                                    canvas.Scale(-1, 1);
+                                    break;
+                                case SKEncodedOrigin.LeftTop:
+                                    canvas.RotateDegrees(-90);
+                                    canvas.Scale(-1, 1);
+                                    break;
+                                case SKEncodedOrigin.RightTop:
+                                    canvas.RotateDegrees(90);
+                                    break;
+                                case SKEncodedOrigin.RightBottom:
+                                    canvas.RotateDegrees(90);
+                                    canvas.Scale(-1, 1);
+                                    break;
+                                case SKEncodedOrigin.LeftBottom:
+                                    canvas.RotateDegrees(-90);
+                                    break;
+                                case SKEncodedOrigin.TopLeft:
+                                default:
+                                    // No rotation needed
+                                    break;
+                            }
+                            
+                            canvas.Translate(-centerX, -centerY);
+                            
+                            // Draw the bitmap
+                            canvas.DrawBitmap(bmp, rect);
+                            canvas.Restore();
+                        }
                     }
                 }
-                catch { }
+                catch 
+                {
+                    // Fallback to simple decode if codec fails
+                    try
+                    {
+                        using var stream = File.OpenRead(ImagePath);
+                        using var bmp = SKBitmap.Decode(stream);
+                        if (bmp != null)
+                        {
+                            var rect = FitRectToCanvas(bmp.Width, bmp.Height, e.Info.Width, e.Info.Height);
+                            canvas.DrawBitmap(bmp, rect);
+                        }
+                    }
+                    catch { }
+                }
             }
 
             foreach (var item in _items)
@@ -722,6 +1075,177 @@ namespace MauiApp.Views
             float w = imgW * ratio, h = imgH * ratio;
             float l = (cw - w) / 2, t = (ch - h) / 2;
             return new SKRect(l, t, l + w, t + h);
+        }
+
+        private SKRect? GetImageBounds()
+        {
+            if (string.IsNullOrEmpty(ImagePath) || CanvasView.CanvasSize.Width <= 0 || CanvasView.CanvasSize.Height <= 0)
+                return null;
+
+            try
+            {
+                using var stream = File.OpenRead(ImagePath);
+                using var codec = SKCodec.Create(stream);
+                if (codec != null)
+                {
+                    var info = codec.Info;
+                    var orientation = codec.EncodedOrigin;
+                    
+                    // Determine the actual dimensions after rotation
+                    int width = info.Width;
+                    int height = info.Height;
+                    
+                    // Swap dimensions if rotated 90 or 270 degrees
+                    if (orientation == SKEncodedOrigin.LeftTop || orientation == SKEncodedOrigin.RightBottom ||
+                        orientation == SKEncodedOrigin.LeftBottom || orientation == SKEncodedOrigin.RightTop)
+                    {
+                        (width, height) = (height, width);
+                    }
+                    
+                    return FitRectToCanvas(width, height, (int)CanvasView.CanvasSize.Width, (int)CanvasView.CanvasSize.Height);
+                }
+            }
+            catch 
+            {
+                // Fallback to simple decode if codec fails
+                try
+                {
+                    using var stream = File.OpenRead(ImagePath);
+                    using var bmp = SKBitmap.Decode(stream);
+                    if (bmp != null)
+                    {
+                        return FitRectToCanvas(bmp.Width, bmp.Height, (int)CanvasView.CanvasSize.Width, (int)CanvasView.CanvasSize.Height);
+                    }
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private SKPoint ConstrainPointToImage(SKPoint point)
+        {
+            var imageBounds = GetImageBounds();
+            if (!imageBounds.HasValue)
+                return point;
+
+            var bounds = imageBounds.Value;
+            return new SKPoint(
+                Math.Max(bounds.Left, Math.Min(bounds.Right, point.X)),
+                Math.Max(bounds.Top, Math.Min(bounds.Bottom, point.Y))
+            );
+        }
+
+        private SKRect ConstrainRectToImage(SKRect rect)
+        {
+            var imageBounds = GetImageBounds();
+            if (!imageBounds.HasValue)
+                return rect;
+
+            var bounds = imageBounds.Value;
+            var constrained = rect;
+            
+            // First, ensure the rectangle doesn't extend beyond the right edge
+            if (constrained.Right > bounds.Right)
+            {
+                var offsetX = bounds.Right - constrained.Right;
+                constrained = new SKRect(
+                    constrained.Left + offsetX,
+                    constrained.Top,
+                    bounds.Right,
+                    constrained.Bottom
+                );
+            }
+            
+            // Then, ensure it doesn't extend beyond the bottom edge
+            if (constrained.Bottom > bounds.Bottom)
+            {
+                var offsetY = bounds.Bottom - constrained.Bottom;
+                constrained = new SKRect(
+                    constrained.Left,
+                    constrained.Top + offsetY,
+                    constrained.Right,
+                    bounds.Bottom
+                );
+            }
+            
+            // Ensure it doesn't extend beyond the left edge
+            if (constrained.Left < bounds.Left)
+            {
+                var offsetX = bounds.Left - constrained.Left;
+                constrained = new SKRect(
+                    bounds.Left,
+                    constrained.Top,
+                    constrained.Right + offsetX,
+                    constrained.Bottom
+                );
+            }
+            
+            // Ensure it doesn't extend beyond the top edge
+            if (constrained.Top < bounds.Top)
+            {
+                var offsetY = bounds.Top - constrained.Top;
+                constrained = new SKRect(
+                    constrained.Left,
+                    bounds.Top,
+                    constrained.Right,
+                    constrained.Bottom + offsetY
+                );
+            }
+            
+            // If the rectangle is still larger than the image bounds after positioning, scale it down
+            if (constrained.Width > bounds.Width || constrained.Height > bounds.Height)
+            {
+                var scaleX = bounds.Width / constrained.Width;
+                var scaleY = bounds.Height / constrained.Height;
+                var scale = Math.Min(scaleX, scaleY);
+                
+                var newWidth = constrained.Width * scale;
+                var newHeight = constrained.Height * scale;
+                var centerX = constrained.MidX;
+                var centerY = constrained.MidY;
+                
+                // Ensure the scaled rectangle stays within bounds
+                var scaledLeft = centerX - newWidth / 2f;
+                var scaledTop = centerY - newHeight / 2f;
+                var scaledRight = centerX + newWidth / 2f;
+                var scaledBottom = centerY + newHeight / 2f;
+                
+                // Constrain the scaled rectangle
+                if (scaledLeft < bounds.Left)
+                {
+                    scaledRight += bounds.Left - scaledLeft;
+                    scaledLeft = bounds.Left;
+                }
+                if (scaledRight > bounds.Right)
+                {
+                    scaledLeft -= scaledRight - bounds.Right;
+                    scaledRight = bounds.Right;
+                }
+                if (scaledTop < bounds.Top)
+                {
+                    scaledBottom += bounds.Top - scaledTop;
+                    scaledTop = bounds.Top;
+                }
+                if (scaledBottom > bounds.Bottom)
+                {
+                    scaledTop -= scaledBottom - bounds.Bottom;
+                    scaledBottom = bounds.Bottom;
+                }
+                
+                constrained = new SKRect(scaledLeft, scaledTop, scaledRight, scaledBottom);
+            }
+
+            // Ensure width and height are valid
+            if (constrained.Width < 0)
+            {
+                constrained.Left = constrained.Right = (constrained.Left + constrained.Right) / 2;
+            }
+            if (constrained.Height < 0)
+            {
+                constrained.Top = constrained.Bottom = (constrained.Top + constrained.Bottom) / 2;
+            }
+
+            return constrained;
         }
 
         private void DrawSelectionCorners(SKCanvas canvas, SKRect bounds)
@@ -880,18 +1404,66 @@ namespace MauiApp.Views
                 c.RotateRadians(rotation);
                 c.Translate(-center.X, -center.Y);
 
-                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
+                using var p = new SKPaint 
+                { 
+                    Style = SKPaintStyle.Stroke, 
+                    StrokeWidth = Stroke, 
+                    Color = Color, 
+                    IsAntialias = true,
+                    StrokeCap = SKStrokeCap.Round,
+                    StrokeJoin = SKStrokeJoin.Round
+                };
 
+                // Draw the arrow shaft
                 var start = new SKPoint(Rect.Left, Rect.MidY);
                 var end = new SKPoint(Rect.Right, Rect.MidY);
                 c.DrawLine(start, end, p);
 
-                var len = Math.Min(20, Math.Max(8, Rect.Width / 6));
-                var angle = 0f;
-                var left = new SKPoint(end.X - len * (float)Math.Cos(angle - Math.PI / 6), end.Y - len * (float)Math.Sin(angle - Math.PI / 6));
-                var right = new SKPoint(end.X - len * (float)Math.Cos(angle + Math.PI / 6), end.Y - len * (float)Math.Sin(angle + Math.PI / 6));
-                c.DrawLine(end, left, p);
-                c.DrawLine(end, right, p);
+                // Calculate arrow head size - proportional to arrow length but with min/max bounds
+                var arrowLength = Rect.Width;
+                var headLength = Math.Min(arrowLength * 0.25f, Math.Max(arrowLength * 0.2f, Stroke * 2.5f));
+                var headWidth = headLength * 0.7f; // Width of arrow head base
+                
+                // Arrow points to the right, so tip is at end.X
+                var tip = new SKPoint(end.X, end.Y);
+                
+                // Calculate arrow head points - create a sharp triangle pointing right
+                // The base of the triangle is perpendicular to the arrow direction
+                var baseCenterX = end.X - headLength;
+                var baseCenterY = end.Y;
+                
+                // Top point of arrow head base
+                var topPoint = new SKPoint(baseCenterX, baseCenterY - headWidth / 2f);
+                
+                // Bottom point of arrow head base
+                var bottomPoint = new SKPoint(baseCenterX, baseCenterY + headWidth / 2f);
+                
+                // Draw arrow head as a filled triangle for sharp appearance
+                using var headPaint = new SKPaint
+                {
+                    Style = SKPaintStyle.Fill,
+                    Color = Color,
+                    IsAntialias = true
+                };
+                
+                var arrowPath = new SKPath();
+                arrowPath.MoveTo(tip);
+                arrowPath.LineTo(topPoint);
+                arrowPath.LineTo(bottomPoint);
+                arrowPath.Close();
+                c.DrawPath(arrowPath, headPaint);
+                
+                // Also draw outline for better visibility
+                using var outlinePaint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = Stroke,
+                    Color = Color,
+                    IsAntialias = true,
+                    StrokeCap = SKStrokeCap.Round,
+                    StrokeJoin = SKStrokeJoin.Round
+                };
+                c.DrawPath(arrowPath, outlinePaint);
 
                 c.Restore();
             }
@@ -932,35 +1504,119 @@ namespace MauiApp.Views
                 c.RotateRadians(rotation);
                 c.Translate(-center.X, -center.Y);
 
-                using var p = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = Stroke, Color = Color, IsAntialias = true };
-                c.DrawLine(Rect.Left, Rect.Top, Rect.Right, Rect.Bottom, p);
-                c.DrawLine(Rect.Right, Rect.Top, Rect.Left, Rect.Bottom, p);
+                using var p = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = Stroke * 1.2f, // Slightly thicker
+                    Color = Color,
+                    IsAntialias = true,
+                    StrokeCap = SKStrokeCap.Round
+                };
 
+                float padding = Stroke * 2;
+                var left = Rect.Left + padding;
+                var top = Rect.Top + padding;
+                var right = Rect.Right - padding;
+                var bottom = Rect.Bottom - padding;
+
+                c.DrawLine(left, top, right, bottom, p);
+                c.DrawLine(right, top, left, bottom, p);
                 c.Restore();
             }
         }
 
         private class TextDrawable : RotatableDrawable
         {
-            public string Text { get; set; }
+            public string Text 
+            { 
+                get => _text;
+                set 
+                { 
+                    _text = value;
+                    _wrappedLines = null; // Invalidate cache when text changes
+                }
+            }
+            private string _text;
             public SKPoint Position { get; private set; }
             public SKColor Color { get; set; }
             public float FontSize { get; private set; }
             private readonly float _originalFontSize;
             private const float MinTextScale = 0.3f;
             private const float MaxTextScale = 4.0f;
+            private List<string>? _wrappedLines;
+            private float? _maxWidth;
+            private readonly Func<SKRect?> _getImageBounds;
 
-            public TextDrawable(string text, SKPoint position, SKColor color, float fontSize)
+            public TextDrawable(string text, SKPoint position, SKColor color, float fontSize, Func<SKRect?> getImageBounds)
             {
-                Text = text;
+                _text = text;
                 Position = position;
                 Color = color;
                 _originalFontSize = fontSize;
                 FontSize = fontSize;
+                _getImageBounds = getImageBounds;
+                _wrappedLines = null; // Will be calculated when needed
+            }
+
+            private List<string> GetWrappedLines(float maxWidth)
+            {
+                if (_wrappedLines != null && _maxWidth.HasValue && Math.Abs(_maxWidth.Value - maxWidth) < 0.1f)
+                    return _wrappedLines;
+
+                _maxWidth = maxWidth;
+                _wrappedLines = new List<string>();
+
+                if (string.IsNullOrEmpty(Text))
+                {
+                    _wrappedLines.Add("");
+                    return _wrappedLines;
+                }
+
+                using var paint = new SKPaint
+                {
+                    TextSize = FontSize,
+                    IsAntialias = true,
+                    TextAlign = SKTextAlign.Left
+                };
+
+                var words = Text.Split(' ');
+                var currentLine = "";
+
+                foreach (var word in words)
+                {
+                    var testLine = string.IsNullOrEmpty(currentLine) ? word : currentLine + " " + word;
+                    var bounds = new SKRect();
+                    paint.MeasureText(testLine, ref bounds);
+
+                    if (bounds.Width <= maxWidth || string.IsNullOrEmpty(currentLine))
+                    {
+                        currentLine = testLine;
+                    }
+                    else
+                    {
+                        _wrappedLines.Add(currentLine);
+                        currentLine = word;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(currentLine))
+                {
+                    _wrappedLines.Add(currentLine);
+                }
+
+                if (_wrappedLines.Count == 0)
+                {
+                    _wrappedLines.Add("");
+                }
+
+                return _wrappedLines;
             }
 
             public override void Draw(SKCanvas c)
             {
+                if (string.IsNullOrEmpty(Text))
+                    return;
+
                 using var paint = new SKPaint
                 {
                     Color = Color,
@@ -970,11 +1626,53 @@ namespace MauiApp.Views
                     TextAlign = SKTextAlign.Left
                 };
 
+                // Get image bounds to calculate max width for wrapping
+                var imageBounds = GetImageBoundsForText();
+                float maxWidth;
+                
+                if (imageBounds.HasValue)
+                {
+                    var bounds = imageBounds.Value;
+                    // Calculate available width from current position to right edge of image
+                    var availableWidth = bounds.Right - Position.X;
+                    // Use 95% of available width or full image width, whichever is smaller
+                    maxWidth = Math.Min(availableWidth * 0.95f, bounds.Width * 0.95f);
+                    
+                    // Ensure minimum width
+                    if (maxWidth < 50)
+                        maxWidth = bounds.Width * 0.9f; // Fallback to 90% of image width
+                }
+                else
+                {
+                    maxWidth = 500; // Fallback width
+                }
+
+                var lines = GetWrappedLines(maxWidth);
+                var fontMetrics = paint.FontMetrics;
+                var lineHeight = Math.Abs(fontMetrics.Ascent) + Math.Abs(fontMetrics.Descent);
+                var lineSpacing = lineHeight * 0.2f; // 20% spacing between lines
+                var totalLineHeight = lineHeight + lineSpacing;
+
                 c.Save();
                 c.Translate(Position.X, Position.Y);
                 c.RotateRadians(rotation);
-                c.DrawText(Text, 0, 0, paint);
+
+                float yOffset = 0;
+                foreach (var line in lines)
+                {
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        c.DrawText(line, 0, yOffset, paint);
+                    }
+                    yOffset += totalLineHeight;
+                }
+
                 c.Restore();
+            }
+
+            private SKRect? GetImageBoundsForText()
+            {
+                return _getImageBounds?.Invoke();
             }
 
             public override SKRect GetBounds()
@@ -988,20 +1686,53 @@ namespace MauiApp.Views
                     IsAntialias = true,
                     TextAlign = SKTextAlign.Left
                 };
-               
-                var bounds = new SKRect();
-                paint.MeasureText(Text, ref bounds);
+
+                // Get image bounds to calculate max width for wrapping
+                var imageBounds = GetImageBoundsForText();
+                float maxWidth;
                 
+                if (imageBounds.HasValue)
+                {
+                    var bounds = imageBounds.Value;
+                    // Calculate available width from current position to right edge of image
+                    var availableWidth = bounds.Right - Position.X;
+                    // Use 95% of available width or full image width, whichever is smaller
+                    maxWidth = Math.Min(availableWidth * 0.95f, bounds.Width * 0.95f);
+                    
+                    // Ensure minimum width
+                    if (maxWidth < 50)
+                        maxWidth = bounds.Width * 0.9f; // Fallback to 90% of image width
+                }
+                else
+                {
+                    maxWidth = 500; // Fallback width
+                }
+
+                var lines = GetWrappedLines(maxWidth);
                 var fontMetrics = paint.FontMetrics;
-                
-                var textWidth = bounds.Width;
-                var textHeight = Math.Abs(fontMetrics.Ascent) + Math.Abs(fontMetrics.Descent);
+                var lineHeight = Math.Abs(fontMetrics.Ascent) + Math.Abs(fontMetrics.Descent);
+                var lineSpacing = lineHeight * 0.2f;
+                var totalLineHeight = lineHeight + lineSpacing;
+
+                // Calculate the maximum width of all lines
+                float maxLineWidth = 0;
+                foreach (var line in lines)
+                {
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        var bounds = new SKRect();
+                        paint.MeasureText(line, ref bounds);
+                        maxLineWidth = Math.Max(maxLineWidth, bounds.Width);
+                    }
+                }
+
+                var totalHeight = lines.Count * totalLineHeight - lineSpacing; // Subtract last line spacing
                 
                 var result = new SKRect(
                     Position.X,                    // Left
                     Position.Y - Math.Abs(fontMetrics.Ascent),
-                    Position.X + textWidth,        // Right
-                    Position.Y + Math.Abs(fontMetrics.Descent)
+                    Position.X + maxLineWidth,     // Right
+                    Position.Y - Math.Abs(fontMetrics.Ascent) + totalHeight
                 );
                 
                 if (result.Width < 20) result.Right = result.Left + 20;
@@ -1024,8 +1755,14 @@ namespace MauiApp.Views
             {
                 scale = Math.Max(MinTextScale, Math.Min(MaxTextScale, scale));
 
-                FontSize = _originalFontSize * scale;
+                var originalCenterX = original.MidX;
+                var originalCenterY = original.MidY;
 
+                FontSize = _originalFontSize * scale;
+                _wrappedLines = null;
+
+                var imageBounds = GetImageBoundsForText();
+                
                 using var paint = new SKPaint
                 {
                     TextSize = FontSize,
@@ -1033,23 +1770,124 @@ namespace MauiApp.Views
                     TextAlign = SKTextAlign.Left
                 };
 
-                var textBounds = new SKRect();
-                paint.MeasureText(Text ?? string.Empty, ref textBounds);
+                var tempPositionX = originalCenterX;
+                
+                float maxWidth;
+                if (imageBounds.HasValue)
+                {
+                    var bounds = imageBounds.Value;
+                    var availableWidth = bounds.Right - tempPositionX;
+                    maxWidth = Math.Min(availableWidth * 0.95f, bounds.Width * 0.95f);
+                    
+                    if (maxWidth < 50)
+                        maxWidth = bounds.Width * 0.9f;
+                }
+                else
+                {
+                    maxWidth = 500f;
+                }
+                
+                var lines = GetWrappedLines(maxWidth);
                 var metrics = paint.FontMetrics;
                 var ascentAbs = Math.Abs(metrics.Ascent);
                 var descentAbs = Math.Abs(metrics.Descent);
-                var newWidth = textBounds.Width;
-                var newHeight = ascentAbs + descentAbs;
+                var lineHeight = ascentAbs + descentAbs;
+                var lineSpacing = lineHeight * 0.2f;
+                var totalLineHeight = lineHeight + lineSpacing;
+                var totalHeight = lines.Count * totalLineHeight - lineSpacing;
 
-                var centerX = original.MidX;
-                var centerY = original.MidY;
-                var left = centerX - newWidth / 2f;
-                var top = centerY - newHeight / 2f;
+                float maxLineWidth = 0;
+                foreach (var line in lines)
+                {
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        var bounds = new SKRect();
+                        paint.MeasureText(line, ref bounds);
+                        maxLineWidth = Math.Max(maxLineWidth, bounds.Width);
+                    }
+                }
 
-                if (left < 0) left = 0;
-                if (top < 0) top = 0;
+                var newCenterX = originalCenterX;
+                var newCenterY = originalCenterY;
+                
+                var newBaselineY = newCenterY - totalHeight / 2f + ascentAbs;
+                var newLeftX = newCenterX - maxLineWidth / 2f;
 
-                Position = new SKPoint(left, top + ascentAbs);
+                if (imageBounds.HasValue)
+                {
+                    var bounds = imageBounds.Value;
+                    
+                    if (newLeftX < bounds.Left || newLeftX + maxLineWidth > bounds.Right)
+                    {
+                        newLeftX = Math.Max(bounds.Left, newLeftX);
+                        
+                        var constrainedAvailableWidth = bounds.Right - newLeftX;
+                        var constrainedMaxWidth = Math.Min(constrainedAvailableWidth * 0.95f, bounds.Width * 0.95f);
+                        
+                        if (constrainedMaxWidth < 50)
+                            constrainedMaxWidth = bounds.Width * 0.9f;
+                        
+                        _wrappedLines = null;
+                        lines = GetWrappedLines(constrainedMaxWidth);
+                        
+                        maxLineWidth = 0;
+                        foreach (var line in lines)
+                        {
+                            if (!string.IsNullOrEmpty(line))
+                            {
+                                var lineBounds = new SKRect();
+                                paint.MeasureText(line, ref lineBounds);
+                                maxLineWidth = Math.Max(maxLineWidth, lineBounds.Width);
+                            }
+                        }
+                        
+                        totalHeight = lines.Count * totalLineHeight - lineSpacing;
+                        newBaselineY = newCenterY - totalHeight / 2f + ascentAbs;
+                        
+                        if (newLeftX + maxLineWidth > bounds.Right)
+                        {
+                            newLeftX = bounds.Right - maxLineWidth;
+                        }
+                    }
+                    
+                    var textBounds = new SKRect(
+                        newLeftX,
+                        newBaselineY - ascentAbs,
+                        newLeftX + maxLineWidth,
+                        newBaselineY - ascentAbs + totalHeight
+                    );
+                    
+                    if (textBounds.Right > bounds.Right)
+                    {
+                        newLeftX = bounds.Right - maxLineWidth;
+                        textBounds.Left = newLeftX;
+                        textBounds.Right = bounds.Right;
+                    }
+                    if (textBounds.Left < bounds.Left)
+                    {
+                        newLeftX = bounds.Left;
+                    }
+                    
+                    textBounds = new SKRect(
+                        newLeftX,
+                        newBaselineY - ascentAbs,
+                        newLeftX + maxLineWidth,
+                        newBaselineY - ascentAbs + totalHeight
+                    );
+                    
+                    if (textBounds.Bottom > bounds.Bottom)
+                    {
+                        newBaselineY = bounds.Bottom - totalHeight + ascentAbs;
+                        textBounds.Bottom = bounds.Bottom;
+                        textBounds.Top = newBaselineY - ascentAbs;
+                    }
+                    if (textBounds.Top < bounds.Top)
+                    {
+                        newBaselineY = bounds.Top + ascentAbs;
+                    }
+                }
+
+                Position = new SKPoint(newLeftX, newBaselineY);
             }
         }
 

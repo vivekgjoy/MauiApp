@@ -327,9 +327,11 @@ public partial class AddReportPage : ContentPage
     {
         try
         {
+            string normalizedImagePath = await NormalizeImageOrientation(imagePath);
+            
             var imageCropPage = new ImageCropPage
             {
-                ImagePath = imagePath
+                ImagePath = normalizedImagePath
             };
 
             await Navigation.PushAsync(imageCropPage);
@@ -337,6 +339,96 @@ public partial class AddReportPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task<string> NormalizeImageOrientation(string imagePath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(imagePath);
+            using var codec = SkiaSharp.SKCodec.Create(stream);
+            
+            if (codec == null)
+                return imagePath;
+            
+            var orientation = codec.EncodedOrigin;
+            var info = codec.Info;
+            
+            if (orientation == SkiaSharp.SKEncodedOrigin.TopLeft)
+                return imagePath;
+            
+            stream.Position = 0;
+            using var originalBitmap = SkiaSharp.SKBitmap.Decode(stream);
+            
+            if (originalBitmap == null)
+                return imagePath;
+            
+            bool isRotated = orientation == SkiaSharp.SKEncodedOrigin.LeftTop ||
+                             orientation == SkiaSharp.SKEncodedOrigin.RightTop ||
+                             orientation == SkiaSharp.SKEncodedOrigin.LeftBottom ||
+                             orientation == SkiaSharp.SKEncodedOrigin.RightBottom;
+            
+            int outputWidth = isRotated ? info.Height : info.Width;
+            int outputHeight = isRotated ? info.Width : info.Height;
+            
+            using var normalizedBitmap = new SkiaSharp.SKBitmap(outputWidth, outputHeight);
+            using var canvas = new SkiaSharp.SKCanvas(normalizedBitmap);
+            canvas.Clear(SkiaSharp.SKColors.White);
+            
+            canvas.Save();
+            float centerX = outputWidth / 2f;
+            float centerY = outputHeight / 2f;
+            canvas.Translate(centerX, centerY);
+            
+            switch (orientation)
+            {
+                case SkiaSharp.SKEncodedOrigin.TopRight:
+                    canvas.Scale(-1, 1);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.BottomRight:
+                    canvas.RotateDegrees(180);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.BottomLeft:
+                    canvas.RotateDegrees(180);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.LeftTop:
+                    canvas.RotateDegrees(-90);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.RightTop:
+                    canvas.RotateDegrees(90);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.RightBottom:
+                    canvas.RotateDegrees(90);
+                    canvas.Scale(-1, 1);
+                    break;
+                case SkiaSharp.SKEncodedOrigin.LeftBottom:
+                    canvas.RotateDegrees(-90);
+                    break;
+            }
+            
+            canvas.Translate(-centerX, -centerY);
+            
+            var destRect = new SkiaSharp.SKRect(0, 0, outputWidth, outputHeight);
+            canvas.DrawBitmap(originalBitmap, destRect);
+            canvas.Restore();
+            
+            var cachePath = FileSystem.CacheDirectory;
+            var normalizedFileName = $"normalized_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            var normalizedImagePath = Path.Combine(cachePath, normalizedFileName);
+            
+            using var image = SkiaSharp.SKImage.FromBitmap(normalizedBitmap);
+            using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 95);
+            using var fileStream = File.Create(normalizedImagePath);
+            data.SaveTo(fileStream);
+            
+            return normalizedImagePath;
+        }
+        catch
+        {
+            return imagePath;
         }
     }
 
