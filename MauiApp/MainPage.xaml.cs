@@ -47,6 +47,7 @@ public partial class MainPage : ContentPage
         }
     }
 
+
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
         try

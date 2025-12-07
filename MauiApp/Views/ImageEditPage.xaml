@@ -9,220 +9,45 @@
              NavigationPage.HasNavigationBar="False"
              NavigationPage.HasBackButton="False">
 
-    <!-- Gradient Background like Splash/Login -->
-    <Grid>
-        <BoxView>
-            <BoxView.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
-                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
-                </LinearGradientBrush>
-            </BoxView.Background>
-        </BoxView>
+    <Grid RowDefinitions="Auto,*">
+        <!-- Toolbar -->
+        <Border BackgroundColor="#512BD4" Padding="10" Grid.Row="0">
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Button Text="Freehand" Clicked="OnFreehand" BackgroundColor="White" TextColor="#512BD4" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Rectangle" Clicked="OnRectangle" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Circle" Clicked="OnCircle" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Arrow" Clicked="OnArrow" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Text" Clicked="OnText" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Delete" Clicked="OnDeleteSelected" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Undo" Clicked="OnUndo" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Redo" Clicked="OnRedo" BackgroundColor="Transparent" TextColor="White" BorderColor="White" BorderWidth="1" CornerRadius="8" Padding="12,8"/>
+                <Button Text="Save" Clicked="OnSave" BackgroundColor="#673AB7" TextColor="White" CornerRadius="8" Padding="12,8"/>
+                <Picker x:Name="colorPicker" Title="Color" SelectedIndex="0" WidthRequest="100">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type Color}">
+                            <Color>Red</Color>
+                            <Color>Blue</Color>
+                            <Color>Green</Color>
+                            <Color>Yellow</Color>
+                            <Color>Black</Color>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+            </HorizontalStackLayout>
+        </Border>
 
-        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
-
-            <!-- Top Bar -->
-            <Grid Grid.Row="0"
-      BackgroundColor="{StaticResource TopCoral}"
-      Padding="{OnPlatform iOS='12,50,12,12', Android='12,55,12,12', WinUI='12,40,12,12'}"
-      HorizontalOptions="FillAndExpand"
-      VerticalOptions="Start">
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <Image Source="ic_arrow_back.svg"
-                       WidthRequest="22"
-                       HeightRequest="22"
-                       VerticalOptions="Center"
-                       HorizontalOptions="Start">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnBackClicked" />
-                    </Image.GestureRecognizers>
-                </Image>
-
-                <Label Grid.Column="1"
-           Text="Edit Image"
-           TextColor="White"
-           FontSize="18"
-           FontAttributes="Bold"
-           VerticalOptions="Center"
-           HorizontalOptions="Center" />
-
-                <BoxView Grid.Column="2"
-             WidthRequest="28"
-             HeightRequest="28"
-             BackgroundColor="Transparent"/>
-            </Grid>
-
-            <!-- Canvas Area -->
-            <Grid Grid.Row="1"
-                  BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
-                <Image x:Name="EditImage"
-                       Aspect="AspectFit"
-                       VerticalOptions="FillAndExpand"
-                       HorizontalOptions="FillAndExpand"/>
-                <skia:SKCanvasView x:Name="CanvasView"
-                                   PaintSurface="OnCanvasViewPaintSurface"
+        <!-- Canvas with Zoom & Pan -->
+        <ScrollView Grid.Row="1" x:Name="scrollView">
+            <skia:SKCanvasView x:Name="canvasView"
+                               PaintSurface="OnPaintSurface"
                                    EnableTouchEvents="True"
-                                   Touch="OnTouchEffectAction"
-                                   VerticalOptions="FillAndExpand"
-                                   HorizontalOptions="FillAndExpand"/>
-            </Grid>
-
-            <!-- Bottom Tools -->
-            <Grid Grid.Row="2" Padding="12" RowSpacing="8">
-                <StackLayout Spacing="8">
-
-                    <!-- Brush Size + Colors -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <StackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Brush Size" FontAttributes="Bold" FontSize="13"/>
-                            <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="60" Value="5" ValueChanged="OnBrushSizeChanged" />
-                            <Label x:Name="BrushSizeLabel" Text="5px" FontSize="12" HorizontalOptions="Center"/>
-                        </StackLayout>
-
-                        <StackLayout Grid.Column="1" Spacing="4">
-                            <Label Text="Color" FontAttributes="Bold" FontSize="13"/>
-                            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,4,0,0">
-                                <Button x:Name="RedColorButton" Grid.Column="0" BackgroundColor="Red" CornerRadius="18"
-                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                                <Button x:Name="BlueColorButton" Grid.Column="1" BackgroundColor="Blue" CornerRadius="18"
-                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                                <Button x:Name="GreenColorButton" Grid.Column="2" BackgroundColor="Green" CornerRadius="18"
-                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                                <Button x:Name="BlackColorButton" Grid.Column="3" BackgroundColor="Black" CornerRadius="18"
-                                        WidthRequest="36" HeightRequest="36" Clicked="OnColorButtonClicked"/>
-                            </Grid>
-                        </StackLayout>
-                    </Grid>
-
-                    <!-- Tools: Brush/Eraser + Undo/Redo -->
-                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
-                        <Button x:Name="BrushToolButton" Grid.Column="0" Text="✏️" Clicked="OnToolSelected"
-                                BackgroundColor="{StaticResource TopCoral}" TextColor="White" CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="EraserToolButton" Grid.Column="1" Text="🧽" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="TextToolButton" Grid.Column="2" Text="T" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="White"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44" FontSize="24" FontAttributes="Bold"/>
-                        <ImageButton x:Name="DeleteButton" Grid.Column="3" Source="ic_delete.svg" Clicked="OnDeleteClicked"
-                                BackgroundColor="Transparent"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44" HeightRequest="44" Padding="8"/>
-                        <Button x:Name="UndoButton" Grid.Column="4" Text="↶" Clicked="OnUndoClicked"
-                                BackgroundColor="Transparent" TextColor="White"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44" FontSize="22"/>
-                        <Button x:Name="RedoButton" Grid.Column="5" Text="↷" Clicked="OnRedoClicked"
-                                BackgroundColor="Transparent" TextColor="White"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44" FontSize="22"/>
-                    </Grid>
-
-                    <!-- Symbols row -->
-                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-                        <Button x:Name="ArrowToolButton" Grid.Column="0" Text="➡️" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="CircleToolButton" Grid.Column="1" Text="⭕" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="SquareToolButton" Grid.Column="2" Text="⬜" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="CheckToolButton" Grid.Column="3" Text="✅" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                        <Button x:Name="CrossToolButton" Grid.Column="4" Text="❌" Clicked="OnToolSelected"
-                                BackgroundColor="Transparent" TextColor="{StaticResource TopCoral}"
-                                BorderColor="{StaticResource TopCoral}" BorderWidth="1"
-                                CornerRadius="8" WidthRequest="44"/>
-                    </Grid>
-
-                    <!-- Save Button -->
-                    <Button Text="Save Image"
-                            Clicked="OnSaveClicked"
-                            BackgroundColor="{StaticResource TopCoral}"
-                            TextColor="White"
-                            BorderColor="{StaticResource BottomCoral}"
-                            BorderWidth="1.5"
-                            CornerRadius="8"
-                            HeightRequest="48" />
-                </StackLayout>
-            </Grid>
-        </Grid>
-
-        <!-- Custom Text Popup -->
-        <Grid x:Name="TextPopup"
-              IsVisible="False"
-              BackgroundColor="#80000000"
-              InputTransparent="False"
-              Opacity="0"
-              VerticalOptions="FillAndExpand"
-              HorizontalOptions="FillAndExpand">
-            <Grid.GestureRecognizers>
-                <TapGestureRecognizer Tapped="OnPopupBackgroundTapped" />
-            </Grid.GestureRecognizers>
-
-            <Frame x:Name="PopupFrame"
-                   BackgroundColor="White"
-                   CornerRadius="16"
-                   Padding="20"
-                   WidthRequest="300"
-                   HasShadow="True"
-                   InputTransparent="False"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center">
-                <VerticalStackLayout Spacing="15">
-                    
-                    <!-- Title -->
-                    <Label x:Name="PopupTitle"
-                           Text="Enter Text"
-                           FontAttributes="Bold"
-                           FontSize="18"
-                           TextColor="Black"
-                           HorizontalOptions="Start" />
-
-                    <!-- Text Entry -->
-                    <Entry x:Name="PopupEntry"
-                           Placeholder="Type here..."
-                           TextColor="Black"
-                           PlaceholderColor="#888"
-                           FontSize="16" />
-
-                    <!-- Buttons -->
-                    <HorizontalStackLayout Spacing="30"
-                                           HorizontalOptions="End">
-                        <Button Text="Cancel"
-                                Clicked="OnPopupCancelClicked"
-                                BackgroundColor="Transparent"
-                                TextColor="Black"
-                                FontAttributes="Bold"
-                                Padding="0"
-                                HeightRequest="40" />
-                        <Button Text="OK"
-                                Clicked="OnPopupOkClicked"
-                                BackgroundColor="Transparent"
-                                TextColor="Black"
-                                FontAttributes="Bold"
-                                Padding="0"
-                                HeightRequest="40" />
-                    </HorizontalStackLayout>
-
-                </VerticalStackLayout>
-            </Frame>
-        </Grid>
+                               Touch="OnTouch">
+                <skia:SKCanvasView.GestureRecognizers>
+                    <PinchGestureRecognizer PinchUpdated="OnPinch"/>
+                </skia:SKCanvasView.GestureRecognizers>
+            </skia:SKCanvasView>
+        </ScrollView>
     </Grid>
 </ContentPage>
+
+
