@@ -171,6 +171,28 @@
 
         <!-- CANVAS -->
         <Grid Grid.Row="2" x:Name="CanvasContainer" BackgroundColor="#121212">
+            <!-- Loading Indicator Overlay -->
+            <Grid x:Name="LoadingOverlay"
+                  BackgroundColor="#121212"
+                  IsVisible="True"
+                  HorizontalOptions="FillAndExpand"
+                  VerticalOptions="FillAndExpand">
+                <StackLayout HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Spacing="20">
+                    <ActivityIndicator x:Name="LoadingIndicator"
+                                     IsRunning="True"
+                                     Color="White"
+                                     WidthRequest="50"
+                                     HeightRequest="50" />
+                    <Label Text="Loading image..."
+                           TextColor="White"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           Opacity="0.8" />
+                </StackLayout>
+            </Grid>
+
             <!-- Transparent overlay to capture touch events (for Draw mode) -->
             <Grid BackgroundColor="Transparent"
                   InputTransparent="False"

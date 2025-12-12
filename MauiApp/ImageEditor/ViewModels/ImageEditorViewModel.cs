@@ -104,13 +104,16 @@ public partial class ImageEditorViewModel : ObservableObject
     public ImageEditorViewModel(string imagePath, SKCanvasView canvasView)
     {
         this.canvasView = canvasView;
-        LoadImage(imagePath);
+        // Don't load image in constructor - load it asynchronously
         SetupTools();
         
         CropVM = new CropToolViewModel(this);
         DrawVM = new DrawToolViewModel(this);
         TextVM = new TextToolViewModel(this);
         ShapesVM = new ShapesToolViewModel(this);
+        
+        // Load image asynchronously
+        _ = LoadImageAsync(imagePath);
         
         // Subscribe to property changes for toolbar visibility
         if (CropVM != null)
@@ -158,38 +161,56 @@ public partial class ImageEditorViewModel : ObservableObject
         }
     }
 
-    private void LoadImage(string path)
+    private async Task LoadImageAsync(string path)
     {
         try
         {
-            // Step 1: Decode bitmap (raw pixels, no auto-rotation)
-            using var sourceBitmap = SKBitmap.Decode(path);
-            if (sourceBitmap == null)
+            // Load image on background thread to avoid blocking UI
+            SKBitmap correctedBitmap = await Task.Run(() =>
+            {
+                // Step 1: Decode bitmap (raw pixels, no auto-rotation)
+                using var sourceBitmap = SKBitmap.Decode(path);
+                if (sourceBitmap == null)
+                {
+                    return null;
+                }
+
+                // Step 2: Read EXIF orientation from the file
+                int orientation = GetExifOrientation(path);
+
+                // Step 3: Apply correct rotation/flip based on EXIF
+                return ApplyExifOrientation(sourceBitmap, orientation);
+            });
+
+            if (correctedBitmap == null)
             {
                 return;
             }
 
-            // Step 2: Read EXIF orientation from the file
-            int orientation = GetExifOrientation(path);
+            // Step 4: Assign to Original & Working on UI thread
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                OriginalBitmap = correctedBitmap;
+                WorkingBitmap = new SKBitmap(correctedBitmap.Info);
+                correctedBitmap.CopyTo(WorkingBitmap);
 
-            // Step 3: Apply correct rotation/flip based on EXIF
-            SKBitmap correctedBitmap = ApplyExifOrientation(sourceBitmap, orientation);
+                SaveToUndo();
+                
+                // Ensure CanReset is notified after initial load
+                OnPropertyChanged(nameof(CanReset));
 
-            // Step 4: Assign to Original & Working
-            OriginalBitmap = correctedBitmap;
-            WorkingBitmap = new SKBitmap(correctedBitmap.Info);
-            correctedBitmap.CopyTo(WorkingBitmap);
-
-            SaveToUndo();
-            
-            // Ensure CanReset is notified after initial load
-            OnPropertyChanged(nameof(CanReset));
-
-            canvasView?.InvalidateSurface();
+                canvasView?.InvalidateSurface();
+            });
         }
         catch (Exception ex)
         {
         }
+    }
+
+    private void LoadImage(string path)
+    {
+        // Synchronous version for backward compatibility
+        _ = LoadImageAsync(path);
     }
 
     /// <summary>

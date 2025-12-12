@@ -93,6 +93,12 @@ namespace MauiApp.ImageEditor
             InitializeComponent();
             OnImageSaved = onImageSaved;
             
+            // Show loading indicator by default (will be hidden when image loads)
+            if (LoadingOverlay != null)
+            {
+                LoadingOverlay.IsVisible = true;
+            }
+            
             // Set up navigation bar back command
             if (NavigationBar != null)
             {
@@ -256,8 +262,26 @@ namespace MauiApp.ImageEditor
         }
         public void SetImageSource(string imagePath)
         {
+            // Show loading indicator
+            if (LoadingOverlay != null)
+            {
+                LoadingOverlay.IsVisible = true;
+            }
+            
+            // Call async version without awaiting (fire and forget)
+            _ = SetImageSourceAsync(imagePath);
+        }
+
+        public async Task SetImageSourceAsync(string imagePath)
+        {
             if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
             {
+                // Show loading indicator
+                if (LoadingOverlay != null)
+                {
+                    LoadingOverlay.IsVisible = true;
+                }
+
                 // Ensure CanvasView is ready for touch
                 if (CanvasView != null)
                 {
@@ -268,6 +292,7 @@ namespace MauiApp.ImageEditor
                     CanvasView.Touch += OnTouch;
                 }
                 
+                // Create ViewModel on UI thread (needs CanvasView)
                 viewModel = new ImageEditorViewModel(imagePath, CanvasView);
                 BindingContext = viewModel;
 
@@ -277,8 +302,18 @@ namespace MauiApp.ImageEditor
                     OnImageSaved?.Invoke(path);
                 };
 
-                // Subscribe to tool selection
-                viewModel.PropertyChanged += ViewModel_PropertyChanged;
+                // Subscribe to image loaded event to hide loading indicator
+                viewModel.PropertyChanged += (s, e) =>
+                {
+                    // Hide loading indicator when image is loaded
+                    if (e.PropertyName == nameof(ImageEditorViewModel.OriginalBitmap) && viewModel.OriginalBitmap != null)
+                    {
+                        if (LoadingOverlay != null)
+                        {
+                            LoadingOverlay.IsVisible = false;
+                        }
+                    }
+                };
 
                 // Subscribe to crop VM property changes to invalidate canvas
                 if (viewModel.CropVM != null)

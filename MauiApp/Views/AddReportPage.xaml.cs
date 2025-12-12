@@ -2,6 +2,7 @@ using MauiApp.Core.Interfaces;
 using MauiApp.Core.Services;
 using MauiApp.ViewModels;
 using MauiApp.Core.Models;
+using System.Linq;
 
 namespace MauiApp.Views;
 
@@ -11,6 +12,7 @@ public partial class AddReportPage : ContentPage
     private readonly IReportImageService _reportImageService;
     private const int MaxImages = 10;
 	private bool _isFirstLoad = true;
+    private bool _isEditingImage = false; // Flag to prevent multiple edit clicks
     
     // State preservation properties
     private string _savedTitle = string.Empty;
@@ -251,46 +253,76 @@ public partial class AddReportPage : ContentPage
             VerticalOptions = LayoutOptions.Fill
         };
 
-        // Delete button
+        // Delete button - increased size for better visibility
         var deleteButton = new Button
         {
             Text = "×",
-            FontSize = 16,
-            FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.White,
-            BackgroundColor = Color.FromArgb("#ED1C24"), // TopCoral background
-            CornerRadius = 12,
-            WidthRequest = 24,
-            HeightRequest = 24,
-            HorizontalOptions = LayoutOptions.End,
-            VerticalOptions = LayoutOptions.Start,
-            Margin = new Thickness(0, 4, 8, 0),
-            Padding = new Thickness(0)
-        };
-
-        // Edit button
-        var editButton = new Button
-        {
-            Text = "✏️",
             FontSize = 14,
             FontAttributes = FontAttributes.Bold,
             TextColor = Colors.White,
-            BackgroundColor = Color.FromArgb("#4CAF50"), // Green background for edit
-            CornerRadius = 12,
-            WidthRequest = 24,
-            HeightRequest = 24,
+            BackgroundColor = Color.FromArgb("#ED1C24"), // Red background
+            CornerRadius = 10,
+            WidthRequest = 20,
+            HeightRequest = 20,
             HorizontalOptions = LayoutOptions.End,
             VerticalOptions = LayoutOptions.Start,
-            Margin = new Thickness(0, 4, 36, 0), // Positioned to the left of delete button
-            Padding = new Thickness(0)
+            Margin = new Thickness(0, 4, 4, 0), // Top: 4, Right: 4 (matching - both same value)
+            Padding = new Thickness(0),
+            MinimumWidthRequest = 20,
+            MinimumHeightRequest = 20
         };
+
+        // Edit button - increased size with progress indicator container
+        // Positioned to the left of delete button with proper spacing
+        var editButtonContainer = new Grid
+        {
+            WidthRequest = 20,
+            HeightRequest = 20,
+            HorizontalOptions = LayoutOptions.End,
+            VerticalOptions = LayoutOptions.Start,
+            Margin = new Thickness(0, 4, 28, 0) // 28px from right (20px button + 4px gap + 4px delete margin)
+        };
+
+        var editButton = new Button
+        {
+            Text = "✏️",
+            FontSize = 12,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#4CAF50"), // Green background for edit
+            CornerRadius = 10,
+            WidthRequest = 20,
+            HeightRequest = 20,
+            HorizontalOptions = LayoutOptions.Fill,
+            VerticalOptions = LayoutOptions.Fill,
+            Padding = new Thickness(0),
+            MinimumWidthRequest = 20,
+            MinimumHeightRequest = 20
+        };
+
+        // Progress indicator overlay (initially hidden)
+        var progressIndicator = new ActivityIndicator
+        {
+            IsRunning = false,
+            IsVisible = false,
+            Color = Colors.White,
+            WidthRequest = 12,
+            HeightRequest = 12,
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center
+        };
+
+        editButtonContainer.Children.Add(editButton);
+        editButtonContainer.Children.Add(progressIndicator);
 
         // Add click handlers
         deleteButton.Clicked += (s, e) => OnRemoveImageClicked(s, e, reportImage.Id);
-        editButton.Clicked += (s, e) => OnEditImageClicked(s, e, reportImage);
+        editButton.Clicked += (s, e) => OnEditImageClicked(s, e, reportImage, editButtonContainer);
 
+        // Add to grid - edit button first (behind), then delete button (on top)
+        // This ensures proper z-order with delete button visible on top
         grid.Children.Add(image);
-        grid.Children.Add(editButton);
+        grid.Children.Add(editButtonContainer);
         grid.Children.Add(deleteButton);
         frame.Content = grid;
 
@@ -303,48 +335,139 @@ public partial class AddReportPage : ContentPage
         await UpdateImagesCollection();
     }
 
-    private async void OnEditImageClicked(object sender, EventArgs e, ReportImage reportImage)
+    private async void OnEditImageClicked(object sender, EventArgs e, ReportImage reportImage, Grid? buttonContainer = null)
     {
+        // Prevent multiple simultaneous clicks
+        if (_isEditingImage)
+        {
+            return;
+        }
+
+        Button? editButton = sender as Button;
+        ActivityIndicator? progressIndicator = null;
+
         try
         {
-            // NEW: Navigate to SkiaSharp Image Editor for editing existing image
-            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
+            _isEditingImage = true;
+            
+            // Disable the button and show progress indicator immediately
+            if (editButton != null)
+            {
+                editButton.IsEnabled = false;
+                editButton.Opacity = 0.6; // Dim the button to show it's disabled
+                
+                // Show progress indicator if available
+                if (buttonContainer != null)
+                {
+                    progressIndicator = buttonContainer.Children.OfType<ActivityIndicator>().FirstOrDefault();
+                    if (progressIndicator != null)
+                    {
+                        progressIndicator.IsRunning = true;
+                        progressIndicator.IsVisible = true;
+                    }
+                }
+            }
+
+            // Store image path and ID for callback
+            string imagePath = reportImage.ImagePath;
+            string imageId = reportImage.Id;
+
+            // Create page callback (lightweight operation)
+            Action<string> onImageSaved = async (savedImagePath) =>
             {
                 // When image is saved, update the existing image and navigate to comment page
-                await Navigation.PopAsync(); // Close image editor
+                await Navigation.PopAsync().ConfigureAwait(false); // Close image editor
                 
                 // Update the image path in the service
-                _reportImageService.UpdateImagePath(reportImage.Id, savedImagePath);
+                _reportImageService.UpdateImagePath(imageId, savedImagePath);
                 
                 var commentPage = new ImageCommentPage
                 {
                     ImagePath = savedImagePath,
-                    ImageId = reportImage.Id,
+                    ImageId = imageId,
                     IsEditingExisting = true
                 };
                 
-                await Navigation.PushAsync(commentPage);
-            });
-            
-            imageEditorPage.SetImageSource(reportImage.ImagePath);
-            await Navigation.PushAsync(imageEditorPage);
-            
-            // OLD CODE - COMMENTED OUT
-            /*
-            // Navigate to ImageEditPage with the existing image and editing flags
-            var imageEditPage = new ImageEditPage
-            {
-                ImagePath = reportImage.ImagePath,
-                ImageId = reportImage.Id,
-                IsEditingExisting = true
+                await Navigation.PushAsync(commentPage).ConfigureAwait(false);
             };
+
+            // Create page instance (should be fast - just UI structure)
+            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(onImageSaved);
             
-            await Navigation.PushAsync(imageEditPage);
-            */
+            // Navigate IMMEDIATELY - start navigation without blocking
+            var navigationTask = Navigation.PushAsync(imageEditorPage);
+            
+            // Yield control to UI thread immediately so UI can update
+            await Task.Yield();
+            
+            // Continue image loading setup in background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Wait for navigation to complete first (but don't block UI thread)
+                    await navigationTask.ConfigureAwait(false);
+                    
+                    // Small delay to ensure page is fully rendered
+                    await Task.Delay(50).ConfigureAwait(false);
+                    
+                    // Now load image asynchronously after navigation is complete
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await imageEditorPage.SetImageSourceAsync(imagePath).ConfigureAwait(false);
+                    }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        try
+                        {
+                            await imageEditorPage.DisplayAlert("Error", $"Failed to load image: {ex.Message}", "OK").ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // Page might not be ready yet, ignore
+                        }
+                    }).ConfigureAwait(false);
+                }
+                finally
+                {
+                    // Hide progress indicator and re-enable button on UI thread
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        if (progressIndicator != null)
+                        {
+                            progressIndicator.IsRunning = false;
+                            progressIndicator.IsVisible = false;
+                        }
+                        if (editButton != null)
+                        {
+                            editButton.IsEnabled = true;
+                            editButton.Opacity = 1.0;
+                        }
+                        _isEditingImage = false;
+                    }).ConfigureAwait(false);
+                }
+            });
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK");
+            _isEditingImage = false;
+            
+            // Hide progress indicator and re-enable button
+            if (progressIndicator != null)
+            {
+                progressIndicator.IsRunning = false;
+                progressIndicator.IsVisible = false;
+            }
+            if (editButton != null)
+            {
+                editButton.IsEnabled = true;
+                editButton.Opacity = 1.0;
+            }
+            
+            await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK").ConfigureAwait(false);
         }
     }
 
@@ -352,9 +475,7 @@ public partial class AddReportPage : ContentPage
     {
         try
         {
-            string normalizedImagePath = await NormalizeImageOrientation(imagePath);
-            
-            // NEW: Navigate to SkiaSharp Image Editor
+            // Navigate to page first (before heavy processing)
             var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
             {
                 // When image is saved, navigate to comment page
@@ -368,8 +489,28 @@ public partial class AddReportPage : ContentPage
                 await Navigation.PushAsync(commentPage);
             });
             
-            imageEditorPage.SetImageSource(normalizedImagePath);
+            // Navigate immediately so user sees the page
             await Navigation.PushAsync(imageEditorPage);
+            
+            // Load image asynchronously after navigation (ViewModel handles EXIF orientation)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Set image source on UI thread (ViewModel will handle EXIF orientation internally)
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await imageEditorPage.SetImageSourceAsync(imagePath);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await imageEditorPage.DisplayAlert("Error", $"Failed to load image: {ex.Message}", "OK");
+                    });
+                }
+            });
             
             // OLD CODE - COMMENTED OUT
             /*
