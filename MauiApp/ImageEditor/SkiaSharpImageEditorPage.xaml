@@ -1062,8 +1062,8 @@
                 </HorizontalStackLayout>
             </Grid>
 
-            <!-- DRAW EDITING TOOLBAR â€“ Similar to shapes toolbar (when draw tool is selected) -->
-            <Grid BackgroundColor="Transparent"
+            <!-- DRAW EDITING TOOLBAR â€" Similar to shapes toolbar (when draw tool is selected) -->
+            <Grid BackgroundColor="#1E1E1E"
                   IsVisible="{Binding DrawVM.IsMainToolbarVisible}"
                   HeightRequest="140">
                 <Grid.RowDefinitions>
@@ -2388,6 +2388,13 @@
                       HeightRequest="420"
                       VerticalOptions="End"
                       ZIndex="10">
+                    <Grid.Triggers>
+                        <DataTrigger TargetType="Grid" 
+                                     Binding="{Binding SelectedToolType}" 
+                                     Value="Draw">
+                            <Setter Property="IsVisible" Value="False"/>
+                        </DataTrigger>
+                    </Grid.Triggers>
                     
                     <Grid Padding="16,20,16,0">
                         <Grid.RowDefinitions>
@@ -2398,7 +2405,7 @@
                         <Grid Grid.Row="0" Padding="0"
                               IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=None}">
                             <toolpanels:DrawToolPanel x:Name="DrawPanel"
-                                                     IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Draw}" 
+                                                     IsVisible="False" 
                                                      BindingContext="{Binding DrawVM}"/>
                             <toolpanels:TextToolPanel x:Name="TextPanel"
                                                      IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Text}" 
