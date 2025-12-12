@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+  <!-- Dotted diagonal line -->
+  <path d="M200-680 L760-120" stroke="#e3e3e3" stroke-width="50" stroke-linecap="round" stroke-dasharray="70 50" fill="none"/>
+  <!-- Left arrowhead (bottom-left) -->
+  <path d="M120-120v-80h184l-504 504H120Z"/>
+  <!-- Right arrowhead (top-right) -->
+  <path d="M840-440v-80h-184l504-504h184v80H840Z"/>
+</svg>

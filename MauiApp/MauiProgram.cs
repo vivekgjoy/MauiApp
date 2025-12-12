@@ -7,11 +7,13 @@ using MauiApp.Views;
 using Microsoft.Maui.LifecycleEvents;
 using CommunityToolkit.Maui;
 using SkiaSharp.Views.Maui.Controls;
+using SkiaSharp.Views.Maui.Handlers;
 #if ANDROID
 using Android.OS;
 using Android.Views;
 using Microsoft.Maui.Platform;
 using Microsoft.Maui.Handlers;
+using Microsoft.Maui.Graphics;
 #endif
 
 namespace MauiApp
@@ -27,27 +29,7 @@ namespace MauiApp
                 .ConfigureMauiHandlers(handlers =>
                 {
                     // Register SkiaSharp handlers
-                    handlers.AddHandler<SKCanvasView, SkiaSharp.Views.Maui.Handlers.SKCanvasViewHandler>();
-                    
-#if ANDROID
-                    // Remove Android underline/background for Entry and Picker
-                    EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
-                    {
-                        handler.PlatformView.Background = null;
-                    });
-                    PickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
-                    {
-                        handler.PlatformView.Background = null;
-                    });
-                    
-                    // Fix Editor underline and cursor color
-                    EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
-                    {
-                        handler.PlatformView.Background = null;
-                        handler.PlatformView.SetTextCursorDrawable(0); // Remove underline
-                        handler.PlatformView.SetTextColor(Android.Graphics.Color.Black); // Set text color to black for visibility
-                    });
-#endif
+                    handlers.AddHandler<SKCanvasView, SKCanvasViewHandler>();
                 })
                 .ConfigureFonts(fonts =>
                 {
@@ -99,6 +81,32 @@ namespace MauiApp
                 {
                     android.OnCreate((activity, bundle) =>
                     {
+                        // Configure handler mappings after app is initialized
+                        try
+                        {
+                            // Remove Android underline/background for Entry and Picker
+                            EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+                            {
+                                handler.PlatformView.Background = null;
+                            });
+                            PickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+                            {
+                                handler.PlatformView.Background = null;
+                            });
+                            
+                            // Fix Editor underline and cursor color
+                            EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+                            {
+                                handler.PlatformView.Background = null;
+                                handler.PlatformView.SetTextCursorDrawable(0); // Remove underline
+                                handler.PlatformView.SetTextColor(Android.Graphics.Color.Black); // Set text color to black for visibility
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error configuring handlers: {ex.Message}");
+                        }
+
                         var color = Colors.Red; // fallback
                         try
                         {

@@ -19,6 +19,10 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<!-- Disable SourceLink to avoid file lock issues -->
+		<PublishRepositoryUrl>false</PublishRepositoryUrl>
+		<EmbedUntrackedSources>false</EmbedUntrackedSources>
+		<IncludeSymbols>false</IncludeSymbols>
 
 		<!-- Display name -->
 		<ApplicationTitle>Smart ERP</ApplicationTitle>
@@ -41,13 +45,19 @@
 		<!-- Android specific properties -->
 		<EmbedAssembliesIntoApk Condition="'$(TargetFramework)' == 'net9.0-android'">true</EmbedAssembliesIntoApk>
 		<AndroidUseSharedRuntime Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidUseSharedRuntime>
-		<AndroidLinkMode Condition="'$(TargetFramework)' == 'net9.0-android'">None</AndroidLinkMode>
+		<!-- Changed from None to SdkOnly to enable proper .NET linking while preserving app code -->
+		<!-- SdkOnly trims unused SDK assemblies but preserves your app code and MAUI's reflection needs -->
+		<AndroidLinkMode Condition="'$(TargetFramework)' == 'net9.0-android'">SdkOnly</AndroidLinkMode>
 		<AndroidCreatePackagePerAbi Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidCreatePackagePerAbi>
 		<AndroidLinkTool Condition="'$(TargetFramework)' == 'net9.0-android'">r8</AndroidLinkTool>
 		<AndroidEnableAssemblyCompression Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidEnableAssemblyCompression>
 		<AndroidUseAapt2 Condition="'$(TargetFramework)' == 'net9.0-android'">true</AndroidUseAapt2>
 		<AndroidLinkResources Condition="'$(TargetFramework)' == 'net9.0-android'">false</AndroidLinkResources>
 		<AndroidDexTool Condition="'$(TargetFramework)' == 'net9.0-android'">d8</AndroidDexTool>
+		<!-- ProGuard/R8 rules file - helps preserve MAUI classes even with R8 disabled -->
+		<AndroidProguardRules Condition="'$(TargetFramework)' == 'net9.0-android'">Platforms\Android\proguard.cfg</AndroidProguardRules>
+		<!-- Fix for missing resource files - limit to common architectures to avoid missing satellite assembly errors -->
+		<AndroidSupportedAbis Condition="'$(TargetFramework)' == 'net9.0-android'">arm64-v8a;armeabi-v7a</AndroidSupportedAbis>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
@@ -55,6 +65,12 @@
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
 	  <AndroidPackageFormat>apk</AndroidPackageFormat>
 	  <ApplicationId>com.smart.erptest</ApplicationId>
+	  <!-- Disable R8 code shrinking to prevent TypeInitializationException in VisualElement -->
+	  <!-- R8 aggressively removes code that MAUI needs for reflection-based features -->
+	  <AndroidUseR8>false</AndroidUseR8>
+	  <!-- Additional safeguards to prevent trimming/shrinking issues -->
+	  <PublishTrimmed>false</PublishTrimmed>
+	  <AndroidEnableProguard>false</AndroidEnableProguard>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
@@ -86,6 +102,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<!-- Exclude old ImageEditPage XAML from compilation (replaced by SkiaSharpImageEditorPage) -->
+		<MauiXaml Remove="Views\ImageEditPage.xaml" Condition="'$(Configuration)' != ''" />
+		
+		<!-- ImageEditor XAML files are automatically included by MAUI's default rules -->
+		<!-- No need to explicitly include them -->
+		
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon_converted.svg" Color="#ED1C24" />
 
@@ -98,6 +120,11 @@
 		<MauiImage Include="Resources\Images\ic_delete.svg" Resize="True" BaseSize="22,22" />
 		<MauiImage Include="Resources\Images\ic_pdf_icon.png" />
 		<MauiImage Include="Resources\Images\ic_eye_icon.png" />
+		
+		<!-- Image Editor Icons (in separate folder for easy removal) -->
+		<!-- Exclude icons that already exist in Images folder to avoid duplicate filename conflicts -->
+		<MauiImage Include="Resources\ImageEditorIcons\*.svg" Resize="True" />
+		<MauiImage Remove="Resources\ImageEditorIcons\ic_arrow_back.svg" />
 		
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
@@ -113,12 +140,18 @@
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
 		<PackageReference Include="System.Text.Json" Version="9.0.5" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="9.0.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.82" />
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.8" />
+		<PackageReference Include="MetadataExtractor" Version="2.9.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
 		<PackageReference Include="Xamarin.AndroidX.Navigation.Runtime" Version="2.8.9.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Resources\Drawable\" />
 	</ItemGroup>
 
 

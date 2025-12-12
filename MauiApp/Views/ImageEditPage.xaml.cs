@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace MauiApp.Views;
 
+// OLD IMAGE EDITOR - COMMENTED OUT (Replaced by SkiaSharpImageEditorPage)
+// This class is kept for reference but disabled to avoid build errors
+#if false
 public partial class ImageEditPage : ContentPage
 {
     private SKImage? _backgroundImage;
@@ -322,6 +325,7 @@ public partial class ImageEditPage : ContentPage
         }
     }
 }
+#endif
 
 // Supporting Classes
 public enum DrawingMode { Select, Freehand, Rectangle, Circle, Arrow, Text }

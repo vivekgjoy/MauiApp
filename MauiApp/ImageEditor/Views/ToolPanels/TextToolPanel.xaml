@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.ImageEditor.Views.ToolPanels.TextToolPanel"
+             BackgroundColor="#2C2C2C">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+          Padding="20"
+          RowSpacing="15">
+
+        <!-- Text Input -->
+        <Entry x:Name="TextEntry"
+               Grid.Row="0"
+               Text="{Binding InputText}"
+               Placeholder="Enter text..."
+               TextColor="White"
+               BackgroundColor="#444444"
+               PlaceholderColor="#888888"
+               FontSize="18"
+               Margin="0,0,0,10"
+               VerticalOptions="Center"
+               IsEnabled="True"
+               IsVisible="True"
+               MaxLength="100"
+               Focused="OnTextEntryFocused"
+               TextChanged="OnTextEntryTextChanged" />
+
+        <!-- Size Slider -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+            <Label Grid.Column="0"
+                   Text="{Binding TextSize, StringFormat='Size: {0:F0}'}"
+                   TextColor="White"
+                   VerticalOptions="Center"
+                   Margin="0,0,15,0"/>
+            <Slider Grid.Column="1"
+                    Minimum="12"
+                    Maximum="200"
+                    Value="{Binding TextSize}"
+                    MinimumTrackColor="#007AFF"
+                    MaximumTrackColor="#444"
+                    ThumbColor="#007AFF"/>
+        </Grid>
+
+        <!-- Color Picker -->
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding TextColors}"
+                        HeightRequest="70">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="12"/>
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{Binding .}"
+                            WidthRequest="44"
+                            HeightRequest="44"
+                            Stroke="White"
+                            StrokeThickness="{OnPlatform WinUI=2, Default=1}"
+                            Margin="5">
+
+                        <!-- This is the correct .NET 9 way -->
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="22"/>
+                        </Border.StrokeShape>
+
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentView}},
+                                                  Path=BindingContext.SelectTextColorCommand}"
+                                CommandParameter="{Binding .}"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentView>

@@ -1,0 +1,2409 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             xmlns:toolpanels="clr-namespace:MauiApp.ImageEditor.Views.ToolPanels"
+             xmlns:converters="clr-namespace:MauiApp.ImageEditor.Converters"
+             x:Class="MauiApp.ImageEditor.SkiaSharpImageEditorPage"
+             BackgroundColor="#121212">
+
+    <ContentPage.Resources>
+        <converters:ToolToBoolConverter x:Key="ToolToBool" />
+        <converters:SubToolToBoolConverter x:Key="SubToolToBool" />
+        <converters:CropModeToColorConverter x:Key="CropModeToColor" />
+        <converters:ShapeTypeToColorConverter x:Key="ShapeTypeToColor" />
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <converters:SelectedToOpacityConverter x:Key="SelectedToOpacityConverter" />
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <converters:SelectedColorConverter x:Key="SelectedColorConverter" />
+        <converters:IsSelectedColorConverter x:Key="IsSelectedColorConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- TOP BAR -->
+        <Grid Grid.Row="0"
+              BackgroundColor="#1E1E1E"
+              HeightRequest="56"
+              Padding="20,0"
+              VerticalOptions="Center">
+
+            <!-- LEFT SIDE -->
+            <HorizontalStackLayout HorizontalOptions="Start"
+                                   VerticalOptions="Center"
+                                   Spacing="16"
+                                   IsVisible="{Binding IsMainToolbarVisible}">
+
+                <!-- Folder -->
+                <Image Source="ic_open_folder_edit.svg"
+                       WidthRequest="26" HeightRequest="26">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOpenFolderClicked"/>
+                    </Image.GestureRecognizers>
+                </Image>
+
+                <!-- Divider -->
+                <BoxView Color="#FFFFFF" Opacity="0.12"
+                         WidthRequest="1"
+                         HeightRequest="24"
+                         VerticalOptions="Center"/>
+
+                <!-- Undo -->
+                <Image Source="ic_undo_edit.svg"
+                       WidthRequest="26" HeightRequest="26"
+                       Opacity="{Binding CanUndo, Converter={StaticResource BoolToOpacityConverter}}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding UndoCommand}"/>
+                    </Image.GestureRecognizers>
+                </Image>
+
+                <!-- Redo -->
+                <Image Source="ic_redo_edit.svg"
+                       WidthRequest="26" HeightRequest="26"
+                       Opacity="{Binding CanRedo, Converter={StaticResource BoolToOpacityConverter}}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding RedoCommand}"/>
+                    </Image.GestureRecognizers>
+                </Image>
+            </HorizontalStackLayout>
+
+            <!-- RIGHT SIDE -->
+            <HorizontalStackLayout HorizontalOptions="End"
+                                   VerticalOptions="Center"
+                                   Spacing="16"
+                                   IsVisible="{Binding IsMainToolbarVisible}">
+
+                <!-- Reset -->
+                <Image Source="ic_reset_image_edit.svg"
+                       WidthRequest="26" HeightRequest="26"
+                       Opacity="{Binding CanReset, Converter={StaticResource BoolToOpacityConverter}}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ResetImageCommand}"/>
+                    </Image.GestureRecognizers>
+                </Image>
+
+                <!-- Divider -->
+                <BoxView Color="#FFFFFF" Opacity="0.12"
+                         WidthRequest="1"
+                         HeightRequest="24"
+                         VerticalOptions="Center"/>
+
+                <!-- Save -->
+                <Image Source="ic_save_image_edit.svg"
+                       WidthRequest="26" HeightRequest="26">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SaveImageCommand}"/>
+                    </Image.GestureRecognizers>
+                </Image>
+            </HorizontalStackLayout>
+
+            <!-- Check icon for Crop -->
+                <Image Source="ic_check.svg"
+       HorizontalOptions="End"
+       VerticalOptions="Center"
+       Margin="16,0"
+       WidthRequest="26" HeightRequest="26"
+       IsVisible="{Binding CropVM.IsCropMode}">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CropVM.ApplyCropCommand}"/>
+                </Image.GestureRecognizers>
+            </Image>
+
+            <!-- Check icon for Draw -->
+                <Image Source="ic_check"
+       HorizontalOptions="End"
+       VerticalOptions="Center"
+       Margin="16,0"
+       WidthRequest="26" HeightRequest="26"
+       IsVisible="{Binding DrawVM.IsDrawMode}">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDrawDoneTapped"/>
+                </Image.GestureRecognizers>
+            </Image>
+
+            <!-- Check icon for Shapes -->
+                <Image Source="ic_check"
+       HorizontalOptions="End"
+       VerticalOptions="Center"
+       Margin="16,0"
+       WidthRequest="26" HeightRequest="26"
+       IsVisible="{Binding ShapesVM.IsShapeMode}">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnShapeDoneTapped"/>
+                </Image.GestureRecognizers>
+            </Image>
+
+            <!-- Check icon for Text -->
+                <Image Source="ic_check"
+       HorizontalOptions="End"
+       VerticalOptions="Center"
+       Margin="16,0"
+       WidthRequest="26" HeightRequest="26"
+       IsVisible="{Binding TextVM.IsTextMode}">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTextDoneTapped"/>
+                </Image.GestureRecognizers>
+            </Image>
+
+        </Grid>
+
+        <!-- CANVAS -->
+        <Grid Grid.Row="1" x:Name="CanvasContainer">
+            <!-- Transparent overlay to capture touch events (for Draw mode) -->
+            <Grid BackgroundColor="Transparent"
+                  InputTransparent="False"
+                  x:Name="TouchOverlay">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTouchOverlayTapped"/>
+                    <PanGestureRecognizer PanUpdated="OnPanGestureUpdated"/>
+                </Grid.GestureRecognizers>
+            </Grid>
+            <!-- CanvasView MUST be last so it's on top and receives touches for Shapes mode -->
+            <skia:SKCanvasView x:Name="CanvasView"
+                               PaintSurface="OnPaintSurface"
+                               BackgroundColor="#121212"
+                               IsEnabled="True"
+                               EnableTouchEvents="True"
+                               InputTransparent="False"/>
+        </Grid>
+
+        <!-- SLIDING PANEL FOR OTHER TOOLS -->
+        <Grid Grid.Row="1" Grid.RowSpan="2" VerticalOptions="End"
+              IsVisible="{Binding IsToolPanelVisible}"
+              TranslationY="{Binding PanelTranslationY, FallbackValue=420}">
+            <Grid BackgroundColor="Transparent"
+                  HeightRequest="420"
+                  VerticalOptions="End">
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Main Tool Panels -->
+                <Grid Grid.Row="0" Padding="0"
+                      IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=None}">
+                    <toolpanels:DrawToolPanel x:Name="DrawPanel"
+                                             IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Draw}" 
+                                             BindingContext="{Binding DrawVM}"/>
+                    <toolpanels:TextToolPanel x:Name="TextPanel"
+                                             IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Text}" 
+                                             BindingContext="{Binding TextVM}"/>
+                    <toolpanels:ShapesToolPanel x:Name="ShapesPanel"
+                                               IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Shapes}" 
+                                               BindingContext="{Binding ShapesVM}"/>
+                </Grid>
+
+                <!-- Shapes Sub-Panel (Presets) -->
+                <Grid Grid.Row="1" Padding="16,0" 
+                      IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=ShapesPresets}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
+                        <Image Source="ic_shape_custom" Grid.Column="0" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Custom"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Image Source="ic_shape_original" Grid.Column="1" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Original"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Image Source="ic_shape_circle.svg" Grid.Column="2" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Circle"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Image Source="ic_shape_ellipse" Grid.Column="3" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Ellipse"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Image Source="ic_shape_square" Grid.Column="4" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Square"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                    </Grid>
+                    <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
+                        <Label Grid.Column="0" Text="Custom" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                        <Label Grid.Column="1" Text="Original" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                        <Label Grid.Column="2" Text="Circle" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                        <Label Grid.Column="3" Text="Ellipse" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                        <Label Grid.Column="4" Text="Square" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- BOTTOM AREA â€“ FINAL SYNC FUSION 2025 CROP PANEL -->
+        <Grid Grid.Row="2" HeightRequest="140" VerticalOptions="End">
+
+            <!-- MAIN TOOLBAR (when not cropping or shaping) -->
+            <Grid BackgroundColor="#1E1E1E"
+                  Padding="0,10,0,20"
+                  IsVisible="{Binding IsMainToolbarVisible}">
+
+                <HorizontalStackLayout HorizontalOptions="CenterAndExpand"
+                                       VerticalOptions="Center"
+                                       Spacing="40">
+
+                    <VerticalStackLayout Spacing="6" x:Name="CropToolContainer">
+                        <Image x:Name="CropToolImage" Source="ic_crop_edit.svg" WidthRequest="28" HeightRequest="28">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Crop"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Label Text="Crop" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Image Source="ic_shapes_edit.svg" WidthRequest="28" HeightRequest="28">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Shapes"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Label Text="Shapes" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Image Source="ic_brush_edit.svg" WidthRequest="28" HeightRequest="28">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Draw"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Label Text="Draw" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Image Source="ic_text_fields_edit.svg" WidthRequest="28" HeightRequest="28">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Text"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Label Text="Text" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- CROP PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding CropVM.IsCropMode}"
+                  HeightRequest="140">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Crop Modes â€“ Scrollable horizontal list for all crop options -->
+                <ScrollView Grid.Row="0"
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <HorizontalStackLayout Spacing="20"
+                                          Padding="20,0"
+                                          VerticalOptions="Center">
+
+                        <!-- Custom -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Custom}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Custom"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_custom.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Custom}"/>
+                            </Frame>
+                            <Label Text="Custom" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Original -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Original}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Original"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_original_edit.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Original}"/>
+                            </Frame>
+                            <Label Text="Original" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Circle -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Circle}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Circle"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_circle.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Circle}"/>
+                            </Frame>
+                            <Label Text="Circle" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Square -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Square}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Square"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_square.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Square}"/>
+                            </Frame>
+                            <Label Text="Square" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 3:1 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio3_1}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio3_1"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_3_1.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio3_1}"/>
+                            </Frame>
+                            <Label Text="3:1" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 3:2 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio3_2}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio3_2"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_3_2.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio3_2}"/>
+                            </Frame>
+                            <Label Text="3:2" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 4:3 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio4_3}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio4_3"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_4_3.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio4_3}"/>
+                            </Frame>
+                            <Label Text="4:3" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 5:4 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio5_4}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio5_4"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_5_4.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio5_4}"/>
+                            </Frame>
+                            <Label Text="5:4" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 7:5 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio7_5}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio7_5"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_7_5.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio7_5}"/>
+                            </Frame>
+                            <Label Text="7:5" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- 16:9 -->
+                        <VerticalStackLayout Spacing="0">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding CropVM.SelectedCropMode, Converter={StaticResource CropModeToColor}, ConverterParameter=Ratio16_9}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CropVM.SelectCropModeCommand}" 
+                                                          CommandParameter="Ratio16_9"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_crop_16_9.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding CropVM.SelectedCropMode, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Ratio16_9}"/>
+                            </Frame>
+                            <Label Text="16:9" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row (unchanged) -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CropVM.CancelCropCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <Image Source="ic_rotate_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CropVM.Rotate90Command}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <Image Source="ic_vertical_flip_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CropVM.FlipHorizontalCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <Image Source="ic_horizontal_flip_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CropVM.FlipVerticalCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- SHAPE EDITING TOOLBAR â€“ Similar to crop toolbar (when shape is selected) -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding ShapesVM.IsMainToolbarVisible}"
+                  HeightRequest="140">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Shape Types Row (same as before) -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <HorizontalStackLayout HorizontalOptions="Start"
+                                          VerticalOptions="Center"
+                                          Spacing="36"
+                                          Padding="20,0">
+
+                        <!-- Rectangle -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=Rectangle}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="Rectangle"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_rectangle.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Rectangle}"/>
+                            </Frame>
+                            <Label Text="Rectangle" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Circle -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=Circle}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="Circle"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_circle.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Circle}"/>
+                            </Frame>
+                            <Label Text="Circle" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Line -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=Line}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="Line"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_line.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=Line}"/>
+                            </Frame>
+                            <Label Text="Line" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Single Arrow -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=SingleArrow}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="SingleArrow"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_arrow.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=SingleArrow}"/>
+                            </Frame>
+                            <Label Text="Arrow" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Double Arrow -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=DoubleArrow}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="DoubleArrow"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_double_head_arrow.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=DoubleArrow}"/>
+                            </Frame>
+                            <Label Text="Double" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Dotted Line -->
+                        <VerticalStackLayout Spacing="6">
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   Margin="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource ShapeTypeToColor}, ConverterParameter=DottedLine}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ShapesVM.SelectShapeTypeCommand}" 
+                                                          CommandParameter="DottedLine"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_shape_line_dotted.svg"
+                                       WidthRequest="26" HeightRequest="26"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Opacity="{Binding ShapesVM.SelectedShapeType, Converter={StaticResource SelectedToOpacityConverter}, ConverterParameter=DottedLine}"/>
+                            </Frame>
+                            <Label Text="Dotted" FontSize="11" TextColor="White" 
+                                   HorizontalTextAlignment="Center" Margin="0"/>
+                        </VerticalStackLayout>
+
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Shape Editing Tools -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeBackTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- SHAPE COLOR PANEL (was Fill Color Panel, now shows Stroke Colors) -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding ShapesVM.ShowFillColorPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding ShapesVM.IsShapeMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding ShapesVM.ShowStrokePanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Stroke Color Palette (using FillColorPanel to show stroke colors) -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <CollectionView ItemsSource="{Binding ShapesVM.StrokeColors}" 
+                                  HeightRequest="60"
+                                  HorizontalOptions="Start">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="8,0">
+                                    <!-- Outer highlight for selected stroke color (Blue circle) -->
+                                    <Border WidthRequest="40" 
+                                            HeightRequest="40"
+                                            Stroke="#007AFF"
+                                            StrokeThickness="3">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="20"/>
+                                        </Border.StrokeShape>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" 
+                                                         Binding="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShapesVM.SelectedStrokeColor}" 
+                                                         Value="{Binding .}">
+                                                <Setter Property="IsVisible" Value="True"/>
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                    <!-- Color circle -->
+                                    <Border BackgroundColor="{Binding .}" 
+                                            WidthRequest="36" 
+                                            HeightRequest="36"
+                                            Stroke="White"
+                                            StrokeThickness="1.5"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18"/>
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShapesVM.SelectStrokeColorCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Shape Editing -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ShapesVM.CloseFillColorPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- STROKE PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding ShapesVM.ShowStrokePanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding ShapesVM.IsShapeMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding ShapesVM.ShowFillColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Stroke Width Slider with Tooltip (Like Draw Tool) -->
+                <Grid Grid.Row="0" Padding="20,0" VerticalOptions="Center">
+                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12" VerticalOptions="Center">
+                        <Label Grid.Column="0" 
+                               Text="Stroke" 
+                               TextColor="White" 
+                               FontSize="14"
+                               VerticalOptions="Center"
+                               Margin="0,0,8,0"/>
+                        <!-- Small purple circle indicator next to Stroke label -->
+                        <Border Grid.Column="1"
+                                WidthRequest="12"
+                                HeightRequest="12"
+                                BackgroundColor="#9C27B0"
+                                VerticalOptions="Center"
+                                Margin="0,0,12,0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="6"/>
+                            </Border.StrokeShape>
+                        </Border>
+                        <!-- Slider with Tooltip -->
+                        <Grid Grid.Column="2" VerticalOptions="Center" HeightRequest="50">
+                            <Slider x:Name="ShapeStrokeSlider"
+                                    Minimum="1" 
+                                    Maximum="50" 
+                                    Value="{Binding ShapesVM.StrokeWidth}"
+                                    MinimumTrackColor="#9C27B0"
+                                    MaximumTrackColor="#444"
+                                    ThumbColor="#9C27B0"
+                                    VerticalOptions="Center"
+                                    HorizontalOptions="Fill"
+                                    HeightRequest="10"
+                                    ValueChanged="OnShapeStrokeSliderValueChanged"
+                                    DragStarted="OnShapeStrokeSliderDragStarted"
+                                    DragCompleted="OnShapeStrokeSliderDragCompleted"/>
+                            
+                            <!-- Tooltip that appears above slider thumb -->
+                            <Border x:Name="ShapeStrokeTooltip"
+                                    BackgroundColor="#9C27B0"
+                                    Padding="10,6"
+                                    IsVisible="False"
+                                    Opacity="0.95"
+                                    HorizontalOptions="Start"
+                                    VerticalOptions="Start"
+                                    TranslationY="-35">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="10"/>
+                                </Border.StrokeShape>
+                                <Label x:Name="ShapeStrokeTooltipLabel"
+                                       Text="{Binding ShapesVM.StrokeWidth, StringFormat='{0:F2}'}"
+                                       TextColor="White"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Shape Editing -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ShapesVM.CloseStrokePanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding ShapesVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShapeDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- DRAW EDITING TOOLBAR â€“ Similar to shapes toolbar (when draw tool is selected) -->
+            <Grid BackgroundColor="Transparent"
+                  IsVisible="{Binding DrawVM.IsMainToolbarVisible}"
+                  HeightRequest="140">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Empty top row for now (can add brush types later) -->
+                <Grid Grid.Row="0" VerticalOptions="Center">
+                    <!-- Placeholder for future brush types -->
+                </Grid>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Draw Editing Tools -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawBackTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- DRAW FILL COLOR PANEL -->
+            <Grid BackgroundColor="Transparent"
+                  IsVisible="{Binding DrawVM.ShowFillColorPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding DrawVM.IsDrawMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding DrawVM.ShowStrokePanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Color Palette -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <CollectionView ItemsSource="{Binding DrawVM.FillColors}" 
+                                  HeightRequest="60"
+                                  HorizontalOptions="Start">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="8,0">
+                                    <!-- Outer highlight for selected color (Blue circle) -->
+                                    <Border WidthRequest="40" 
+                                            HeightRequest="40"
+                                            Stroke="#007AFF"
+                                            StrokeThickness="3">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="20"/>
+                                        </Border.StrokeShape>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" 
+                                                         Binding="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DrawVM.SelectedFillColor}" 
+                                                         Value="{Binding .}">
+                                                <Setter Property="IsVisible" Value="True"/>
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                    <!-- Color circle -->
+                                    <Border BackgroundColor="{Binding .}" 
+                                            WidthRequest="36" 
+                                            HeightRequest="36"
+                                            Stroke="White"
+                                            StrokeThickness="1.5"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18"/>
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DrawVM.SelectFillColorCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Draw Editing -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding DrawVM.CloseFillColorPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- DRAW STROKE PANEL -->
+            <Grid BackgroundColor="Transparent"
+                  IsVisible="{Binding DrawVM.ShowStrokePanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding DrawVM.IsDrawMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding DrawVM.ShowFillColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Stroke Width Slider Only (No Color Palette) -->
+                <Grid Grid.Row="0" Padding="20,0" VerticalOptions="Center">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalOptions="Center">
+                        <Label Grid.Column="0" 
+                               Text="Stroke" 
+                               TextColor="White" 
+                               FontSize="14"
+                               VerticalOptions="Center"
+                               Margin="0,0,12,0"/>
+                        <!-- Slider with Tooltip -->
+                        <Grid Grid.Column="1" VerticalOptions="Center" HeightRequest="50">
+                            <Slider x:Name="DrawStrokeSlider"
+                                    Minimum="1" 
+                                    Maximum="50" 
+                                    Value="{Binding DrawVM.StrokeWidth}"
+                                    MinimumTrackColor="#9C27B0"
+                                    MaximumTrackColor="#444"
+                                    ThumbColor="#9C27B0"
+                                    VerticalOptions="Center"
+                                    HorizontalOptions="Fill"
+                                    HeightRequest="10"
+                                    ValueChanged="OnDrawStrokeSliderValueChanged"
+                                    DragStarted="OnDrawStrokeSliderDragStarted"
+                                    DragCompleted="OnDrawStrokeSliderDragCompleted"/>
+                            
+                            <!-- Tooltip that appears above slider thumb -->
+                            <Border x:Name="DrawStrokeTooltip"
+                                    BackgroundColor="#9C27B0"
+                                    Padding="10,6"
+                                    IsVisible="False"
+                                    Opacity="0.95"
+                                    HorizontalOptions="Start"
+                                    VerticalOptions="Start"
+                                    TranslationY="-35">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="10"/>
+                                </Border.StrokeShape>
+                                <Label x:Name="DrawStrokeTooltipLabel"
+                                       Text="{Binding DrawVM.StrokeWidth, StringFormat='{0:F2}'}"
+                                       TextColor="White"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Draw Editing -->
+                <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="20">
+
+                    <!-- Back Button -->
+                    <Image Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding DrawVM.CloseStrokePanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Stroke Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowStrokePanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawStrokeTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_stroke_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Fill Color Icon -->
+                    <Frame WidthRequest="44" HeightRequest="44"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           BackgroundColor="{Binding DrawVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawFillColorTapped"/>
+                        </Frame.GestureRecognizers>
+                        <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <!-- Mild Vertical Line -->
+                    <BoxView Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32"/>
+
+                    <!-- Delete Button -->
+                    <Image Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDrawDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- TEXT EDITING TOOLBAR â€“ Similar to shapes toolbar (when text is selected) -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding TextVM.IsMainToolbarVisible}"
+                  HeightRequest="70">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Bottom Row - Text Editing Tools -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center" Padding="12,0">
+                    
+                    <!-- Back Button (Static at start) -->
+                    <Image Grid.Column="0" Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextBackTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line (after back) -->
+                    <BoxView Grid.Column="1" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Scrollable Items in the middle -->
+                    <ScrollView Grid.Column="2" 
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                VerticalOptions="Center">
+                        <HorizontalStackLayout Spacing="20" VerticalOptions="Center" Padding="0,0,12,0">
+                            
+                            <!-- +Add Button -->
+                            <Label Text="+Add" 
+                                   TextColor="White"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextAddTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+
+                            <!-- Font Family Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontFamilyPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontFamilyTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="Aa" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Text Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowTextColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <VerticalStackLayout Spacing="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label Text="A" 
+                                           FontSize="20" 
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                    <BoxView HeightRequest="2" 
+                                             WidthRequest="20"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="End"
+                                             Color="{Binding TextVM.TextColorUnderline}"/>
+                                </VerticalStackLayout>
+                            </Frame>
+
+                            <!-- Fill Background Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFillColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Bold Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontAttributesPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontAttributesTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="B" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Mild Vertical Line (before delete) -->
+                    <BoxView Grid.Column="3" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Delete Button (Static at end) -->
+                    <Image Grid.Column="4" Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Font Attributes Tooltip (at toolbar level so both buttons can use it) -->
+                    <Frame x:Name="FontAttributesTooltip"
+                           Grid.Column="2"
+                           IsVisible="False"
+                           BackgroundColor="#000000"
+                           CornerRadius="8"
+                           Padding="12,8"
+                           HasShadow="True"
+                           Opacity="0.95"
+                           HorizontalOptions="Center"
+                           VerticalOptions="End"
+                           Margin="0,0,0,60"
+                           ZIndex="1000">
+                        <Label x:Name="FontAttributesTooltipLabel"
+                               Text="Font attributes"
+                               TextColor="White"
+                               FontSize="12"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                </Grid>
+            </Grid>
+
+            <!-- FONT FAMILY PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding TextVM.ShowFontFamilyPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.IsTextMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowTextColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFillColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Font Family List -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Center">
+                    <CollectionView ItemsSource="{Binding TextVM.FontStyles}" 
+                                  HeightRequest="60"
+                                  HorizontalOptions="Center"
+                                  VerticalOptions="Center">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame WidthRequest="44"
+                                       HeightRequest="44"
+                                       CornerRadius="22"
+                                       Padding="0"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       BackgroundColor="Transparent">
+                                    <Frame.Triggers>
+                                        <!-- Selected state -->
+                                        <DataTrigger TargetType="Frame" 
+                                                     Binding="{Binding IsSelected}" 
+                                                     Value="True">
+                                            <Setter Property="BackgroundColor" Value="#2C2C2C"/>
+                                        </DataTrigger>
+                                    </Frame.Triggers>
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer 
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.TextVM.SelectFontFamilyCommand}"
+                                            CommandParameter="{Binding .}"/>
+                                    </Frame.GestureRecognizers>
+                                    <Label Text="abc" 
+                                           TextColor="White"
+                                           FontSize="11"
+                                           FontFamily="{Binding FontFamily}"
+                                           FontAttributes="{Binding Style}"
+                                           BackgroundColor="Transparent"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Text Editing -->
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center" Padding="12,0">
+                    
+                    <!-- Back Button (Static at start) -->
+                    <Image Grid.Column="0" Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TextVM.CloseFontFamilyPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line (after back) -->
+                    <BoxView Grid.Column="1" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Scrollable Items in the middle -->
+                    <ScrollView Grid.Column="2" 
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                VerticalOptions="Center">
+                        <HorizontalStackLayout Spacing="20" VerticalOptions="Center" Padding="0,0,12,0">
+                            
+                            <!-- +Add Button -->
+                            <Label Text="+Add" 
+                                   TextColor="White"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextAddTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+
+                            <!-- Font Family Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontFamilyPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontFamilyTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="Aa" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Text Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowTextColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <VerticalStackLayout Spacing="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label Text="A" 
+                                           FontSize="20" 
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                    <BoxView HeightRequest="2" 
+                                             WidthRequest="20"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="End"
+                                             Color="{Binding TextVM.TextColorUnderline}"/>
+                                </VerticalStackLayout>
+                            </Frame>
+
+                            <!-- Fill Background Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFillColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Bold Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontAttributesPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontAttributesTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="B" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Mild Vertical Line (before delete) -->
+                    <BoxView Grid.Column="3" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Delete Button (Static at end) -->
+                    <Image Grid.Column="4" Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </Grid>
+            </Grid>
+
+            <!-- TEXT COLOR PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding TextVM.ShowTextColorPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.IsTextMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFontFamilyPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFillColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Color Palette -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <CollectionView ItemsSource="{Binding TextVM.TextColors}" 
+                                  HeightRequest="60"
+                                  HorizontalOptions="Start">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="8,0">
+                                    <!-- Outer highlight for selected color (Blue circle) -->
+                                    <Border WidthRequest="40" 
+                                            HeightRequest="40"
+                                            Stroke="#007AFF"
+                                            StrokeThickness="3">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="20"/>
+                                        </Border.StrokeShape>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" 
+                                                         Binding="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.TextVM.SelectedTextColor}" 
+                                                         Value="{Binding .}">
+                                                <Setter Property="IsVisible" Value="True"/>
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                    <!-- Color circle -->
+                                    <Border BackgroundColor="{Binding .}" 
+                                            WidthRequest="36" 
+                                            HeightRequest="36"
+                                            Stroke="White"
+                                            StrokeThickness="1.5"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18"/>
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.TextVM.SelectTextColorCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Text Editing -->
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center" Padding="12,0">
+                    
+                    <!-- Back Button (Static at start) -->
+                    <Image Grid.Column="0" Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TextVM.CloseTextColorPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line (after back) -->
+                    <BoxView Grid.Column="1" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Scrollable Items in the middle -->
+                    <ScrollView Grid.Column="2" 
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                VerticalOptions="Center">
+                        <HorizontalStackLayout Spacing="20" VerticalOptions="Center" Padding="0,0,12,0">
+                            
+                            <!-- +Add Button -->
+                            <Label Text="+Add" 
+                                   TextColor="White"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextAddTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+
+                            <!-- Font Family Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontFamilyPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontFamilyTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="Aa" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Text Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowTextColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <VerticalStackLayout Spacing="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label Text="A" 
+                                           FontSize="20" 
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                    <BoxView HeightRequest="2" 
+                                             WidthRequest="20"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="End"
+                                             Color="{Binding TextVM.TextColorUnderline}"/>
+                                </VerticalStackLayout>
+                            </Frame>
+
+                            <!-- Fill Background Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFillColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Bold Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontAttributesPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontAttributesTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="B" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Mild Vertical Line (before delete) -->
+                    <BoxView Grid.Column="3" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Delete Button (Static at end) -->
+                    <Image Grid.Column="4" Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </Grid>
+            </Grid>
+
+            <!-- FILL COLOR PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding TextVM.ShowFillColorPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.IsTextMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFontFamilyPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowTextColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Color Palette -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center">
+                    <CollectionView ItemsSource="{Binding TextVM.FillColors}" 
+                                  HeightRequest="60"
+                                  HorizontalOptions="Start">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="8,0">
+                                    <!-- Outer highlight for selected color (Blue circle) -->
+                                    <Border WidthRequest="40" 
+                                            HeightRequest="40"
+                                            Stroke="#007AFF"
+                                            StrokeThickness="3">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="20"/>
+                                        </Border.StrokeShape>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" 
+                                                         Binding="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.TextVM.SelectedFillColor}" 
+                                                         Value="{Binding .}">
+                                                <Setter Property="IsVisible" Value="True"/>
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                    <!-- Color circle -->
+                                    <Border BackgroundColor="{Binding .}" 
+                                            WidthRequest="36" 
+                                            HeightRequest="36"
+                                            Stroke="White"
+                                            StrokeThickness="1.5"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18"/>
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.TextVM.SelectFillColorCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Text Editing -->
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center" Padding="12,0">
+                    
+                    <!-- Back Button (Static at start) -->
+                    <Image Grid.Column="0" Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TextVM.CloseFillColorPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line (after back) -->
+                    <BoxView Grid.Column="1" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Scrollable Items in the middle -->
+                    <ScrollView Grid.Column="2" 
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                VerticalOptions="Center">
+                        <HorizontalStackLayout Spacing="20" VerticalOptions="Center" Padding="0,0,12,0">
+                            
+                            <!-- +Add Button -->
+                            <Label Text="+Add" 
+                                   TextColor="White"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextAddTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+
+                            <!-- Font Family Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontFamilyPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontFamilyTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="Aa" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Text Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowTextColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <VerticalStackLayout Spacing="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label Text="A" 
+                                           FontSize="20" 
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                    <BoxView HeightRequest="2" 
+                                             WidthRequest="20"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="End"
+                                             Color="{Binding TextVM.TextColorUnderline}"/>
+                                </VerticalStackLayout>
+                            </Frame>
+
+                            <!-- Fill Background Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFillColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Bold Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontAttributesPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontAttributesTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="B" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Mild Vertical Line (before delete) -->
+                    <BoxView Grid.Column="3" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Delete Button (Static at end) -->
+                    <Image Grid.Column="4" Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </Grid>
+            </Grid>
+
+            <!-- FONT ATTRIBUTES PANEL -->
+            <Grid BackgroundColor="#1E1E1E"
+                  IsVisible="{Binding TextVM.ShowFontAttributesPanel}"
+                  HeightRequest="140">
+                <Grid.Triggers>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.IsTextMode}" 
+                                 Value="False">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFontFamilyPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowTextColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Grid" 
+                                 Binding="{Binding TextVM.ShowFillColorPanel}" 
+                                 Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </DataTrigger>
+                </Grid.Triggers>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="69"/>
+                </Grid.RowDefinitions>
+
+                <!-- Font Attributes Options -->
+                <ScrollView Grid.Row="0" 
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Center">
+                    <HorizontalStackLayout HorizontalOptions="Center"
+                                          VerticalOptions="Center"
+                                          Spacing="8"
+                                          Padding="20,0,20,0">
+                        
+                        <!-- Bold Option -->
+                        <Frame WidthRequest="44"
+                               HeightRequest="44"
+                               CornerRadius="22"
+                               Padding="8"
+                               HasShadow="False"
+                               BorderColor="Transparent"
+                               BackgroundColor="{Binding TextVM.IsBold, Converter={StaticResource BoolToColorConverter}}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding TextVM.ToggleBoldCommand}"/>
+                            </Frame.GestureRecognizers>
+                            <Image Source="ic_bold_edit" WidthRequest="28" HeightRequest="28"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Frame>
+
+                        <!-- Italic Option -->
+                        <Frame WidthRequest="44"
+                               HeightRequest="44"
+                               CornerRadius="22"
+                               Padding="8"
+                               HasShadow="False"
+                               BorderColor="Transparent"
+                               BackgroundColor="{Binding TextVM.IsItalic, Converter={StaticResource BoolToColorConverter}}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding TextVM.ToggleItalicCommand}"/>
+                            </Frame.GestureRecognizers>
+                            <Image Source="ic_italic_edit" WidthRequest="28" HeightRequest="28"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Frame>
+                        
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" Color="#333333" HeightRequest="1" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Row - Back to Text Editing -->
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center" Padding="12,0">
+                    
+                    <!-- Back Button (Static at start) -->
+                    <Image Grid.Column="0" Source="ic_keyboard_back_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TextVM.CloseFontAttributesPanelCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                    <!-- Mild Vertical Line (after back) -->
+                    <BoxView Grid.Column="1" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Scrollable Items in the middle -->
+                    <ScrollView Grid.Column="2" 
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                VerticalOptions="Center">
+                        <HorizontalStackLayout Spacing="20" VerticalOptions="Center" Padding="0,0,12,0">
+                            
+                            <!-- +Add Button -->
+                            <Label Text="+Add" 
+                                   TextColor="White"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextAddTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+
+                            <!-- Font Family Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontFamilyPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontFamilyTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="Aa" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Text Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowTextColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <VerticalStackLayout Spacing="0" HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label Text="A" 
+                                           FontSize="20" 
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                    <BoxView HeightRequest="2" 
+                                             WidthRequest="20"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="End"
+                                             Color="{Binding TextVM.TextColorUnderline}"/>
+                                </VerticalStackLayout>
+                            </Frame>
+
+                            <!-- Fill Background Color Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFillColorPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFillColorTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Image Source="ic_fill_color_edit.svg" WidthRequest="28" HeightRequest="28"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+
+                            <!-- Bold Icon -->
+                            <Frame WidthRequest="44" HeightRequest="44"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding TextVM.ShowFontAttributesPanel, Converter={StaticResource BoolToColorConverter}}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTextFontAttributesTapped"/>
+                                </Frame.GestureRecognizers>
+                                <Label Text="B" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Mild Vertical Line (before delete) -->
+                    <BoxView Grid.Column="3" Color="White" Opacity="0.3" WidthRequest="1" HeightRequest="32" VerticalOptions="Center"/>
+
+                    <!-- Delete Button (Static at end) -->
+                    <Image Grid.Column="4" Source="ic_delete_edit.svg" WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTextDeleteTapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>
+

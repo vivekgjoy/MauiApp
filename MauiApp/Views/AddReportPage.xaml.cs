@@ -307,6 +307,30 @@ public partial class AddReportPage : ContentPage
     {
         try
         {
+            // NEW: Navigate to SkiaSharp Image Editor for editing existing image
+            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
+            {
+                // When image is saved, update the existing image and navigate to comment page
+                await Navigation.PopAsync(); // Close image editor
+                
+                // Update the image path in the service
+                _reportImageService.UpdateImagePath(reportImage.Id, savedImagePath);
+                
+                var commentPage = new ImageCommentPage
+                {
+                    ImagePath = savedImagePath,
+                    ImageId = reportImage.Id,
+                    IsEditingExisting = true
+                };
+                
+                await Navigation.PushAsync(commentPage);
+            });
+            
+            imageEditorPage.SetImageSource(reportImage.ImagePath);
+            await Navigation.PushAsync(imageEditorPage);
+            
+            // OLD CODE - COMMENTED OUT
+            /*
             // Navigate to ImageEditPage with the existing image and editing flags
             var imageEditPage = new ImageEditPage
             {
@@ -316,6 +340,7 @@ public partial class AddReportPage : ContentPage
             };
             
             await Navigation.PushAsync(imageEditPage);
+            */
         }
         catch (Exception ex)
         {
@@ -329,12 +354,32 @@ public partial class AddReportPage : ContentPage
         {
             string normalizedImagePath = await NormalizeImageOrientation(imagePath);
             
+            // NEW: Navigate to SkiaSharp Image Editor
+            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
+            {
+                // When image is saved, navigate to comment page
+                await Navigation.PopAsync(); // Close image editor
+                
+                var commentPage = new ImageCommentPage
+                {
+                    ImagePath = savedImagePath
+                };
+                
+                await Navigation.PushAsync(commentPage);
+            });
+            
+            imageEditorPage.SetImageSource(normalizedImagePath);
+            await Navigation.PushAsync(imageEditorPage);
+            
+            // OLD CODE - COMMENTED OUT
+            /*
             var imageCropPage = new ImageCropPage
             {
                 ImagePath = normalizedImagePath
             };
 
             await Navigation.PushAsync(imageCropPage);
+            */
         }
         catch (Exception ex)
         {
