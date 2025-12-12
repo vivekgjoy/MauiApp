@@ -9,9 +9,12 @@ using Microsoft.Maui.Devices;
 using MauiApp.ImageEditor.ViewModels;
 using MauiApp.ImageEditor.Models;
 using MauiApp.ImageEditor.Views.ToolPanels;
+using System.Windows.Input;
 #if ANDROID
 using Android.Util;
 using Android.Views;
+using AndroidX.AppCompat.App;
+using Android.OS;
 #endif
 namespace MauiApp.ImageEditor
 {
@@ -90,6 +93,12 @@ namespace MauiApp.ImageEditor
             InitializeComponent();
             OnImageSaved = onImageSaved;
             
+            // Set up navigation bar back command
+            if (NavigationBar != null)
+            {
+                NavigationBar.BackCommand = new Command(async () => await OnBackClicked());
+            }
+            
             // Ensure CanvasView is enabled for touch events
             if (CanvasView != null)
             {
@@ -116,6 +125,30 @@ namespace MauiApp.ImageEditor
             // Fix icon sources to load from embedded resources if file-based loading fails
             // This ensures icons work when library is consumed from NuGet package
             FixIconSources();
+            
+            // Set status bar color to match the header theme
+#if ANDROID
+            if (DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                var activity = Platform.CurrentActivity as AppCompatActivity;
+                if (activity != null && Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
+                {
+                    activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
+                }
+            }
+#endif
+        }
+
+        private async Task OnBackClicked()
+        {
+            await HandleBackNavigation();
+        }
+
+        private async Task HandleBackNavigation()
+        {
+            // Cancel editing and navigate back
+            ImageCancelled?.Invoke(this, EventArgs.Empty);
+            await Navigation.PopAsync();
         }
 
         /// <summary>
@@ -4984,9 +5017,12 @@ namespace MauiApp.ImageEditor
 
         protected override bool OnBackButtonPressed()
         {
-            // Fire cancellation event when back button is pressed
-            ImageCancelled?.Invoke(this, EventArgs.Empty);
-            return base.OnBackButtonPressed();
+            // Handle hardware back button
+            Device.BeginInvokeOnMainThread(async () =>
+            {
+                await HandleBackNavigation();
+            });
+            return true; // Prevent default back behavior
         }
     }
 }

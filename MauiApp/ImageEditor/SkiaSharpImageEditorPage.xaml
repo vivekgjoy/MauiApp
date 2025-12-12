@@ -4,8 +4,13 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              xmlns:toolpanels="clr-namespace:MauiApp.ImageEditor.Views.ToolPanels"
              xmlns:converters="clr-namespace:MauiApp.ImageEditor.Converters"
+             xmlns:components="clr-namespace:MauiApp.Views.Components"
              x:Class="MauiApp.ImageEditor.SkiaSharpImageEditorPage"
-             BackgroundColor="#121212">
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
+             Padding="0"
+             NavigationPage.HasNavigationBar="False"
+             NavigationPage.HasBackButton="False">
 
     <ContentPage.Resources>
         <converters:ToolToBoolConverter x:Key="ToolToBool" />
@@ -20,136 +25,150 @@
         <converters:IsSelectedColorConverter x:Key="IsSelectedColorConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Background Gradient (Same as other pages) -->
+    <Grid>
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BottomCoral}" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-        <!-- TOP BAR -->
-        <Grid Grid.Row="0"
-              BackgroundColor="#1E1E1E"
-              HeightRequest="56"
-              Padding="20,0"
-              VerticalOptions="Center">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-            <!-- LEFT SIDE -->
-            <HorizontalStackLayout HorizontalOptions="Start"
-                                   VerticalOptions="Center"
-                                   Spacing="16"
-                                   IsVisible="{Binding IsMainToolbarVisible}">
+            <!-- Custom Header with Back Button and Title -->
+            <components:GenericNavigationBar Grid.Row="0"
+                                            Title="Edit Image"
+                                            x:Name="NavigationBar" />
 
-                <!-- Folder -->
-                <Image Source="ic_open_folder_edit.svg"
-                       WidthRequest="26" HeightRequest="26">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnOpenFolderClicked"/>
-                    </Image.GestureRecognizers>
-                </Image>
+            <!-- Action Toolbar (Undo, Redo, Reset, Save) - Always Visible -->
+            <Grid Grid.Row="1"
+                  BackgroundColor="Transparent"
+                  HeightRequest="48"
+                  Padding="20,0"
+                  VerticalOptions="Center">
 
-                <!-- Divider -->
-                <BoxView Color="#FFFFFF" Opacity="0.12"
-                         WidthRequest="1"
-                         HeightRequest="24"
-                         VerticalOptions="Center"/>
+                <!-- LEFT SIDE -->
+                <HorizontalStackLayout HorizontalOptions="Start"
+                                       VerticalOptions="Center"
+                                       Spacing="16">
 
-                <!-- Undo -->
-                <Image Source="ic_undo_edit.svg"
-                       WidthRequest="26" HeightRequest="26"
-                       Opacity="{Binding CanUndo, Converter={StaticResource BoolToOpacityConverter}}">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding UndoCommand}"/>
-                    </Image.GestureRecognizers>
-                </Image>
+                    <!-- Folder -->
+                    <Image Source="ic_open_folder_edit.svg"
+                           WidthRequest="26" HeightRequest="26">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnOpenFolderClicked"/>
+                        </Image.GestureRecognizers>
+                    </Image>
 
-                <!-- Redo -->
-                <Image Source="ic_redo_edit.svg"
-                       WidthRequest="26" HeightRequest="26"
-                       Opacity="{Binding CanRedo, Converter={StaticResource BoolToOpacityConverter}}">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding RedoCommand}"/>
-                    </Image.GestureRecognizers>
-                </Image>
-            </HorizontalStackLayout>
+                    <!-- Divider -->
+                    <BoxView Color="#FFFFFF" Opacity="0.3"
+                             WidthRequest="1"
+                             HeightRequest="24"
+                             VerticalOptions="Center"/>
 
-            <!-- RIGHT SIDE -->
-            <HorizontalStackLayout HorizontalOptions="End"
-                                   VerticalOptions="Center"
-                                   Spacing="16"
-                                   IsVisible="{Binding IsMainToolbarVisible}">
+                    <!-- Undo -->
+                    <Image Source="ic_undo_edit.svg"
+                           WidthRequest="26" HeightRequest="26"
+                           Opacity="{Binding CanUndo, Converter={StaticResource BoolToOpacityConverter}}">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding UndoCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
 
-                <!-- Reset -->
-                <Image Source="ic_reset_image_edit.svg"
-                       WidthRequest="26" HeightRequest="26"
-                       Opacity="{Binding CanReset, Converter={StaticResource BoolToOpacityConverter}}">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding ResetImageCommand}"/>
-                    </Image.GestureRecognizers>
-                </Image>
+                    <!-- Redo -->
+                    <Image Source="ic_redo_edit.svg"
+                           WidthRequest="26" HeightRequest="26"
+                           Opacity="{Binding CanRedo, Converter={StaticResource BoolToOpacityConverter}}">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding RedoCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </HorizontalStackLayout>
 
-                <!-- Divider -->
-                <BoxView Color="#FFFFFF" Opacity="0.12"
-                         WidthRequest="1"
-                         HeightRequest="24"
-                         VerticalOptions="Center"/>
+                <!-- RIGHT SIDE -->
+                <HorizontalStackLayout HorizontalOptions="End"
+                                       VerticalOptions="Center"
+                                       Spacing="16">
 
-                <!-- Save -->
-                <Image Source="ic_save_image_edit.svg"
-                       WidthRequest="26" HeightRequest="26">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding SaveImageCommand}"/>
-                    </Image.GestureRecognizers>
-                </Image>
-            </HorizontalStackLayout>
+                    <!-- Reset -->
+                    <Image Source="ic_reset_image_edit.svg"
+                           WidthRequest="26" HeightRequest="26"
+                           Opacity="{Binding CanReset, Converter={StaticResource BoolToOpacityConverter}}">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ResetImageCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
 
-            <!-- Check icon for Crop -->
+                    <!-- Divider -->
+                    <BoxView Color="#FFFFFF" Opacity="0.3"
+                             WidthRequest="1"
+                             HeightRequest="24"
+                             VerticalOptions="Center"/>
+
+                    <!-- Save -->
+                    <Image Source="ic_save_image_edit.svg"
+                           WidthRequest="26" HeightRequest="26">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SaveImageCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </HorizontalStackLayout>
+
+                <!-- Check icon for Crop -->
                 <Image Source="ic_check.svg"
-       HorizontalOptions="End"
-       VerticalOptions="Center"
-       Margin="16,0"
-       WidthRequest="26" HeightRequest="26"
-       IsVisible="{Binding CropVM.IsCropMode}">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding CropVM.ApplyCropCommand}"/>
-                </Image.GestureRecognizers>
-            </Image>
+                       HorizontalOptions="End"
+                       VerticalOptions="Center"
+                       Margin="16,0"
+                       WidthRequest="26" HeightRequest="26"
+                       IsVisible="{Binding CropVM.IsCropMode}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CropVM.ApplyCropCommand}"/>
+                    </Image.GestureRecognizers>
+                </Image>
 
-            <!-- Check icon for Draw -->
+                <!-- Check icon for Draw -->
                 <Image Source="ic_check"
-       HorizontalOptions="End"
-       VerticalOptions="Center"
-       Margin="16,0"
-       WidthRequest="26" HeightRequest="26"
-       IsVisible="{Binding DrawVM.IsDrawMode}">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnDrawDoneTapped"/>
-                </Image.GestureRecognizers>
-            </Image>
+                       HorizontalOptions="End"
+                       VerticalOptions="Center"
+                       Margin="16,0"
+                       WidthRequest="26" HeightRequest="26"
+                       IsVisible="{Binding DrawVM.IsDrawMode}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDrawDoneTapped"/>
+                    </Image.GestureRecognizers>
+                </Image>
 
-            <!-- Check icon for Shapes -->
+                <!-- Check icon for Shapes -->
                 <Image Source="ic_check"
-       HorizontalOptions="End"
-       VerticalOptions="Center"
-       Margin="16,0"
-       WidthRequest="26" HeightRequest="26"
-       IsVisible="{Binding ShapesVM.IsShapeMode}">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnShapeDoneTapped"/>
-                </Image.GestureRecognizers>
-            </Image>
+                       HorizontalOptions="End"
+                       VerticalOptions="Center"
+                       Margin="16,0"
+                       WidthRequest="26" HeightRequest="26"
+                       IsVisible="{Binding ShapesVM.IsShapeMode}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnShapeDoneTapped"/>
+                    </Image.GestureRecognizers>
+                </Image>
 
-            <!-- Check icon for Text -->
+                <!-- Check icon for Text -->
                 <Image Source="ic_check"
-       HorizontalOptions="End"
-       VerticalOptions="Center"
-       Margin="16,0"
-       WidthRequest="26" HeightRequest="26"
-       IsVisible="{Binding TextVM.IsTextMode}">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnTextDoneTapped"/>
-                </Image.GestureRecognizers>
-            </Image>
+                       HorizontalOptions="End"
+                       VerticalOptions="Center"
+                       Margin="16,0"
+                       WidthRequest="26" HeightRequest="26"
+                       IsVisible="{Binding TextVM.IsTextMode}">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTextDoneTapped"/>
+                    </Image.GestureRecognizers>
+                </Image>
 
-        </Grid>
+            </Grid>
 
         <!-- CANVAS -->
-        <Grid Grid.Row="1" x:Name="CanvasContainer">
+        <Grid Grid.Row="2" x:Name="CanvasContainer" BackgroundColor="#121212">
             <!-- Transparent overlay to capture touch events (for Draw mode) -->
             <Grid BackgroundColor="Transparent"
                   InputTransparent="False"
@@ -168,10 +187,10 @@
                                InputTransparent="False"/>
         </Grid>
 
-        <!-- SLIDING PANEL FOR OTHER TOOLS -->
-        <Grid Grid.Row="1" Grid.RowSpan="2" VerticalOptions="End"
-              IsVisible="{Binding IsToolPanelVisible}"
-              TranslationY="{Binding PanelTranslationY, FallbackValue=420}">
+            <!-- SLIDING PANEL FOR OTHER TOOLS -->
+            <Grid Grid.Row="2" Grid.RowSpan="2" VerticalOptions="End"
+                  IsVisible="{Binding IsToolPanelVisible}"
+                  TranslationY="{Binding PanelTranslationY, FallbackValue=420}">
             <Grid BackgroundColor="Transparent"
                   HeightRequest="420"
                   VerticalOptions="End">
@@ -237,15 +256,15 @@
                     </Grid>
                 </Grid>
             </Grid>
-        </Grid>
+            </Grid>
 
-        <!-- BOTTOM AREA â€“ FINAL SYNC FUSION 2025 CROP PANEL -->
-        <Grid Grid.Row="2" HeightRequest="140" VerticalOptions="End">
+            <!-- BOTTOM AREA â€" FINAL SYNC FUSION 2025 CROP PANEL -->
+            <Grid Grid.Row="3" HeightRequest="140" VerticalOptions="End" BackgroundColor="#1E1E1E">
 
-            <!-- MAIN TOOLBAR (when not cropping or shaping) -->
-            <Grid BackgroundColor="#1E1E1E"
-                  Padding="0,10,0,20"
-                  IsVisible="{Binding IsMainToolbarVisible}">
+                <!-- MAIN TOOLBAR (when not cropping or shaping) -->
+                <Grid BackgroundColor="#1E1E1E"
+                      Padding="0,10,0,20"
+                      IsVisible="{Binding IsMainToolbarVisible}">
 
                 <HorizontalStackLayout HorizontalOptions="CenterAndExpand"
                                        VerticalOptions="Center"
@@ -288,12 +307,12 @@
                     </VerticalStackLayout>
 
                 </HorizontalStackLayout>
-            </Grid>
+                </Grid>
 
-            <!-- CROP PANEL -->
-            <Grid BackgroundColor="#1E1E1E"
-                  IsVisible="{Binding CropVM.IsCropMode}"
-                  HeightRequest="140">
+                <!-- CROP PANEL -->
+                <Grid BackgroundColor="#1E1E1E"
+                      IsVisible="{Binding CropVM.IsCropMode}"
+                      HeightRequest="140">
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="70"/>
@@ -1164,7 +1183,7 @@
             </Grid>
 
             <!-- DRAW FILL COLOR PANEL -->
-            <Grid BackgroundColor="Transparent"
+            <Grid BackgroundColor="#1E1E1E"
                   IsVisible="{Binding DrawVM.ShowFillColorPanel}"
                   HeightRequest="140">
                 <Grid.Triggers>
@@ -1301,7 +1320,7 @@
             </Grid>
 
             <!-- DRAW STROKE PANEL -->
-            <Grid BackgroundColor="Transparent"
+            <Grid BackgroundColor="#1E1E1E"
                   IsVisible="{Binding DrawVM.ShowStrokePanel}"
                   HeightRequest="140">
                 <Grid.Triggers>
@@ -2198,12 +2217,12 @@
                     </Image>
 
                 </Grid>
-            </Grid>
+                </Grid>
 
-            <!-- FONT ATTRIBUTES PANEL -->
-            <Grid BackgroundColor="#1E1E1E"
-                  IsVisible="{Binding TextVM.ShowFontAttributesPanel}"
-                  HeightRequest="140">
+                <!-- FONT ATTRIBUTES PANEL -->
+                <Grid BackgroundColor="#1E1E1E"
+                      IsVisible="{Binding TextVM.ShowFontAttributesPanel}"
+                      HeightRequest="140">
                 <Grid.Triggers>
                     <DataTrigger TargetType="Grid" 
                                  Binding="{Binding TextVM.IsTextMode}" 
@@ -2401,6 +2420,7 @@
                         </Image.GestureRecognizers>
                     </Image>
 
+                </Grid>
                 </Grid>
             </Grid>
         </Grid>
