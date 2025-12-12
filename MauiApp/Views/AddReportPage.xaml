@@ -172,5 +172,28 @@
                 </Frame>
             </StackLayout>
         </ScrollView>
+
+        <!-- Processing Overlay - Shows when image is being prepared for editor -->
+        <Grid x:Name="ProcessingOverlay"
+              BackgroundColor="#C8000000"
+              IsVisible="False">
+            <Grid VerticalOptions="Center" HorizontalOptions="Center">
+                <Frame BackgroundColor="#2D2D2D" 
+                       CornerRadius="16" 
+                       Padding="30" 
+                       HasShadow="True">
+                    <StackLayout Spacing="20">
+                        <ActivityIndicator IsRunning="True" 
+                                           Color="#E50000" 
+                                           WidthRequest="50" 
+                                           HeightRequest="50"/>
+                        <Label Text="Preparing image editor..." 
+                               TextColor="White" 
+                               FontSize="16" 
+                               HorizontalTextAlignment="Center"/>
+                    </StackLayout>
+                </Frame>
+            </Grid>
+        </Grid>
     </Grid>
 </ContentPage>

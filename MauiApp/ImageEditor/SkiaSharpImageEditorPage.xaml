@@ -211,79 +211,12 @@
                                InputTransparent="False"/>
         </Grid>
 
-            <!-- SLIDING PANEL FOR OTHER TOOLS -->
-            <Grid Grid.Row="2" Grid.RowSpan="2" VerticalOptions="End"
-                  IsVisible="{Binding IsToolPanelVisible}"
-                  TranslationY="{Binding PanelTranslationY, FallbackValue=420}">
-            <Grid BackgroundColor="Transparent"
-                  HeightRequest="420"
-                  VerticalOptions="End">
+            <!-- BOTTOM AREA â€" UNIFIED CONTAINER FOR TOOLBAR AND SLIDING PANEL -->
+            <Grid x:Name="BottomToolbarGrid" Grid.Row="3" HeightRequest="140" VerticalOptions="End" BackgroundColor="Transparent">
                 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Main Tool Panels -->
-                <Grid Grid.Row="0" Padding="0"
-                      IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=None}">
-                    <toolpanels:DrawToolPanel x:Name="DrawPanel"
-                                             IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Draw}" 
-                                             BindingContext="{Binding DrawVM}"/>
-                    <toolpanels:TextToolPanel x:Name="TextPanel"
-                                             IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Text}" 
-                                             BindingContext="{Binding TextVM}"/>
-                    <toolpanels:ShapesToolPanel x:Name="ShapesPanel"
-                                               IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Shapes}" 
-                                               BindingContext="{Binding ShapesVM}"/>
-                </Grid>
-
-                <!-- Shapes Sub-Panel (Presets) -->
-                <Grid Grid.Row="1" Padding="16,0" 
-                      IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=ShapesPresets}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
-                        <Image Source="ic_shape_custom" Grid.Column="0" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Custom"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                        <Image Source="ic_shape_original" Grid.Column="1" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Original"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                        <Image Source="ic_shape_circle.svg" Grid.Column="2" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Circle"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                        <Image Source="ic_shape_ellipse" Grid.Column="3" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Ellipse"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                        <Image Source="ic_shape_square" Grid.Column="4" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Square"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                    </Grid>
-                    <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
-                        <Label Grid.Column="0" Text="Custom" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
-                        <Label Grid.Column="1" Text="Original" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
-                        <Label Grid.Column="2" Text="Circle" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
-                        <Label Grid.Column="3" Text="Ellipse" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
-                        <Label Grid.Column="4" Text="Square" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
-                    </Grid>
-                </Grid>
-            </Grid>
-            </Grid>
-
-            <!-- BOTTOM AREA â€" FINAL SYNC FUSION 2025 CROP PANEL -->
-            <Grid Grid.Row="3" HeightRequest="140" VerticalOptions="End" BackgroundColor="#1E1E1E">
+                <!-- Main Bottom Toolbar (always at back, ZIndex=1) -->
+                <Grid BackgroundColor="#1E1E1E"
+                      ZIndex="1">
 
                 <!-- MAIN TOOLBAR (when not cropping or shaping) -->
                 <Grid BackgroundColor="#1E1E1E"
@@ -292,7 +225,7 @@
 
                 <HorizontalStackLayout HorizontalOptions="CenterAndExpand"
                                        VerticalOptions="Center"
-                                       Spacing="40">
+                                       Spacing="60">
 
                     <VerticalStackLayout Spacing="6" x:Name="CropToolContainer">
                         <Image x:Name="CropToolImage" Source="ic_crop_edit.svg" WidthRequest="28" HeightRequest="28">
@@ -313,21 +246,21 @@
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="6">
-                        <Image Source="ic_brush_edit.svg" WidthRequest="28" HeightRequest="28">
-                            <Image.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Draw"/>
-                            </Image.GestureRecognizers>
-                        </Image>
-                        <Label Text="Draw" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="6">
                         <Image Source="ic_text_fields_edit.svg" WidthRequest="28" HeightRequest="28">
                             <Image.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Text"/>
                             </Image.GestureRecognizers>
                         </Image>
                         <Label Text="Text" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Image Source="ic_brush_edit.svg" WidthRequest="28" HeightRequest="28">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnToolTapped" CommandParameter="Draw"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Label Text="Draw" TextColor="White" FontSize="11" HorizontalTextAlignment="Center"/>
                     </VerticalStackLayout>
 
                 </HorizontalStackLayout>
@@ -2445,6 +2378,79 @@
                     </Image>
 
                 </Grid>
+                </Grid>
+                </Grid>
+
+                <!-- Sliding Up Tool Panel (Draw/Text/Shapes) - slides OVER the toolbar (ZIndex=10) -->
+                <Grid IsVisible="{Binding IsToolPanelVisible}"
+                      TranslationY="{Binding PanelTranslationY, FallbackValue=420}"
+                      BackgroundColor="#1E1E1E"
+                      HeightRequest="420"
+                      VerticalOptions="End"
+                      ZIndex="10">
+                    
+                    <Grid Padding="16,20,16,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Main Tool Panels -->
+                        <Grid Grid.Row="0" Padding="0"
+                              IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=None}">
+                            <toolpanels:DrawToolPanel x:Name="DrawPanel"
+                                                     IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Draw}" 
+                                                     BindingContext="{Binding DrawVM}"/>
+                            <toolpanels:TextToolPanel x:Name="TextPanel"
+                                                     IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Text}" 
+                                                     BindingContext="{Binding TextVM}"/>
+                            <toolpanels:ShapesToolPanel x:Name="ShapesPanel"
+                                                       IsVisible="{Binding SelectedToolType, Converter={StaticResource ToolToBool}, ConverterParameter=Shapes}" 
+                                                       BindingContext="{Binding ShapesVM}"/>
+                        </Grid>
+
+                        <!-- Shapes Sub-Panel (Presets) -->
+                        <Grid Grid.Row="1" Padding="16,0" 
+                              IsVisible="{Binding SelectedSubToolType, Converter={StaticResource SubToolToBool}, ConverterParameter=ShapesPresets}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
+                                <Image Source="ic_shape_custom" Grid.Column="0" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Custom"/>
+                                    </Image.GestureRecognizers>
+                                </Image>
+                                <Image Source="ic_shape_original" Grid.Column="1" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Original"/>
+                                    </Image.GestureRecognizers>
+                                </Image>
+                                <Image Source="ic_shape_circle.svg" Grid.Column="2" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Circle"/>
+                                    </Image.GestureRecognizers>
+                                </Image>
+                                <Image Source="ic_shape_ellipse" Grid.Column="3" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Ellipse"/>
+                                    </Image.GestureRecognizers>
+                                </Image>
+                                <Image Source="ic_shape_square" Grid.Column="4" WidthRequest="48" HeightRequest="48" BackgroundColor="Transparent">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnShapePresetTapped" CommandParameter="Square"/>
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </Grid>
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="16" RowSpacing="16">
+                                <Label Grid.Column="0" Text="Custom" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="1" Text="Original" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="2" Text="Circle" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="3" Text="Ellipse" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="4" Text="Square" TextColor="White" FontSize="10" HorizontalTextAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>

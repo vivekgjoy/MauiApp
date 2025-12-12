@@ -13,6 +13,8 @@ public partial class AddReportPage : ContentPage
     private const int MaxImages = 10;
 	private bool _isFirstLoad = true;
     private bool _isEditingImage = false; // Flag to prevent multiple edit clicks
+    private bool _isNavigatingAway = false; // Flag to skip UpdateImagesCollection when navigating
+    private bool _isShowingImageSource = false; // Flag to prevent rapid multiple image source selections
     
     // State preservation properties
     private string _savedTitle = string.Empty;
@@ -54,8 +56,18 @@ public partial class AddReportPage : ContentPage
 				DescriptionEditor.Text = _savedDescription;
 		}
 
-		// Initialize images collection
-		await UpdateImagesCollection();
+		// Skip UpdateImagesCollection if we're navigating away immediately
+		// This prevents the delay when selecting an image
+		if (!_isNavigatingAway)
+		{
+			// Initialize images collection
+			await UpdateImagesCollection();
+		}
+		else
+		{
+			// Reset flag after skipping
+			_isNavigatingAway = false;
+		}
 	}
 
     private void OnTitleTextChanged(object sender, TextChangedEventArgs e)
@@ -114,6 +126,10 @@ public partial class AddReportPage : ContentPage
 
     private async void OnAddImageClicked(object sender, EventArgs e)
     {
+        // Prevent rapid multiple taps
+        if (_isShowingImageSource) return;
+        _isShowingImageSource = true;
+
         try
         {
             if (_reportImageService.ReportImages.Count >= MaxImages)
@@ -143,20 +159,18 @@ public partial class AddReportPage : ContentPage
         {
             await DisplayAlert("Error", $"Failed to show image selection options: {ex.Message}", "OK");
         }
+        finally
+        {
+            _isShowingImageSource = false;
+        }
     }
 
     private async Task HandleImageSelection(string option)
     {
+        FileResult photo = null;
+
         try
         {
-            FileResult photo = null;
-
-            // Dismiss the modal image source selection if it's still open
-            if (Navigation.ModalStack.Count > 0)
-            {
-                try { await Navigation.PopModalAsync(); } catch { }
-            }
-
             if (option == "Gallery")
             {
                 photo = await MediaPicker.Default.PickPhotoAsync();
@@ -170,12 +184,58 @@ public partial class AddReportPage : ContentPage
 
             if (photo != null)
             {
-                // Automatically navigate to cropping page instead of adding directly
-                await NavigateToImageEditing(photo.FullPath);
+                // 1. SHOW FULLSCREEN OVERLAY IMMEDIATELY
+                MainThread.BeginInvokeOnMainThread(() => 
+                {
+                    ProcessingOverlay.IsVisible = true;
+                });
+
+                // Set flag to skip UpdateImagesCollection in OnAppearing
+                // This prevents the delay when OnAppearing is called after modal pop
+                _isNavigatingAway = true;
+                
+                try
+                {
+                    // 2. Pop modal (no animation)
+                    // This will trigger OnAppearing, but it will skip UpdateImagesCollection due to the flag
+                    while (Navigation.ModalStack.Count > 0)
+                    {
+                        await Navigation.PopModalAsync(false); // false = no animation
+                    }
+                    
+                    // 3. Navigate to editor
+                    await NavigateToImageEditing(photo.FullPath);
+                    
+                    // 4. HIDE OVERLAY ONCE EDITOR IS LOADED
+                    // This is done inside NavigateToImageEditing, after SetImageSourceAsync completes
+                }
+                finally
+                {
+                    // Critical: always reset flag to prevent permanent breakage
+                    // If this isn't reset, UpdateImagesCollection will be permanently skipped
+                    _isNavigatingAway = false;
+                }
+            }
+            else
+            {
+                // If no photo selected, dismiss modal normally
+                while (Navigation.ModalStack.Count > 0)
+                {
+                    await Navigation.PopModalAsync();
+                }
             }
         }
         catch (Exception ex)
         {
+            // Ensure modal is dismissed even on error
+            while (Navigation.ModalStack.Count > 0)
+            {
+                try { await Navigation.PopModalAsync(); } catch { break; }
+            }
+            
+            // Ensure flag is reset on error
+            _isNavigatingAway = false;
+            
             await DisplayAlert("Error", $"Failed to select image: {ex.Message}", "OK");
         }
     }
@@ -372,27 +432,74 @@ public partial class AddReportPage : ContentPage
             string imagePath = reportImage.ImagePath;
             string imageId = reportImage.Id;
 
+            // Create page instance first so we can reference it in the callback
+            MauiApp.ImageEditor.SkiaSharpImageEditorPage? imageEditorPage = null;
+            
             // Create page callback (lightweight operation)
             Action<string> onImageSaved = async (savedImagePath) =>
             {
-                // When image is saved, update the existing image and navigate to comment page
-                await Navigation.PopAsync().ConfigureAwait(false); // Close image editor
+                // Get the current navigation and image editor page
+                var navigation = imageEditorPage?.Navigation ?? Navigation;
+                var currentEditorPage = imageEditorPage;
                 
-                // Update the image path in the service
-                _reportImageService.UpdateImagePath(imageId, savedImagePath);
-                
-                var commentPage = new ImageCommentPage
+                // Show progress overlay on image editor page BEFORE navigation
+                if (currentEditorPage != null)
                 {
-                    ImagePath = savedImagePath,
-                    ImageId = imageId,
-                    IsEditingExisting = true
-                };
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await ShowProgressOnImageEditorPage(currentEditorPage);
+                    });
+                    
+                    // Small delay to ensure progress overlay is visible
+                    await Task.Delay(50);
+                }
                 
-                await Navigation.PushAsync(commentPage).ConfigureAwait(false);
+                // Set flag BEFORE popping to prevent OnAppearing from updating images collection
+                _isNavigatingAway = true;
+                
+                try
+                {
+                    // Update the image path in the service first
+                    _reportImageService.UpdateImagePath(imageId, savedImagePath);
+                    
+                    // Create comment page
+                    var commentPage = new ImageCommentPage
+                    {
+                        ImagePath = savedImagePath,
+                        ImageId = imageId,
+                        IsEditingExisting = true
+                    };
+                    
+                    // Navigate directly: Insert comment page before AddReportPage, then pop twice
+                    // This way AddReportPage never appears
+                    if (navigation.NavigationStack.Count >= 2)
+                    {
+                        // Insert comment page before AddReportPage (which is second to last)
+                        var addReportPageIndex = navigation.NavigationStack.Count - 2;
+                        navigation.InsertPageBefore(commentPage, navigation.NavigationStack[addReportPageIndex]);
+                        
+                        // Pop image editor (no animation)
+                        await navigation.PopAsync(false).ConfigureAwait(false);
+                        
+                        // Pop AddReportPage (no animation) - now comment page is on top
+                        await navigation.PopAsync(false).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Fallback: pop and push if navigation stack is unexpected
+                        await navigation.PopAsync(false).ConfigureAwait(false);
+                        await navigation.PushAsync(commentPage, false).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    // Reset flag after navigation is complete
+                    _isNavigatingAway = false;
+                }
             };
 
             // Create page instance (should be fast - just UI structure)
-            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(onImageSaved);
+            imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(onImageSaved);
             
             // Navigate IMMEDIATELY - start navigation without blocking
             var navigationTask = Navigation.PushAsync(imageEditorPage);
@@ -475,56 +582,47 @@ public partial class AddReportPage : ContentPage
     {
         try
         {
-            // Navigate to page first (before heavy processing)
             var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
             {
-                // When image is saved, navigate to comment page
-                await Navigation.PopAsync(); // Close image editor
-                
-                var commentPage = new ImageCommentPage
-                {
-                    ImagePath = savedImagePath
-                };
-                
+                await Navigation.PopAsync();
+                var commentPage = new ImageCommentPage { ImagePath = savedImagePath };
                 await Navigation.PushAsync(commentPage);
             });
-            
-            // Navigate immediately so user sees the page
+
+            // Push editor page
             await Navigation.PushAsync(imageEditorPage);
-            
-            // Load image asynchronously after navigation (ViewModel handles EXIF orientation)
+
+            // Now load image in background
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    // Set image source on UI thread (ViewModel will handle EXIF orientation internally)
                     await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
                         await imageEditorPage.SetImageSourceAsync(imagePath);
                     });
+
+                    // SUCCESS: Hide overlay only when image is loaded and visible
+                    await Task.Delay(300); // Small delay for smoothness
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        ProcessingOverlay.IsVisible = false;
+                    });
                 }
                 catch (Exception ex)
                 {
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    MainThread.BeginInvokeOnMainThread(async () =>
                     {
+                        ProcessingOverlay.IsVisible = false;
                         await imageEditorPage.DisplayAlert("Error", $"Failed to load image: {ex.Message}", "OK");
                     });
                 }
             });
-            
-            // OLD CODE - COMMENTED OUT
-            /*
-            var imageCropPage = new ImageCropPage
-            {
-                ImagePath = normalizedImagePath
-            };
-
-            await Navigation.PushAsync(imageCropPage);
-            */
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to open image editor: {ex.Message}", "OK");
+            ProcessingOverlay.IsVisible = false;
+            await DisplayAlert("Error", $"Failed to open editor: {ex.Message}", "OK");
         }
     }
 
@@ -792,6 +890,69 @@ public partial class AddReportPage : ContentPage
         if (Content is Grid grid && grid.Children.Contains(progressOverlay))
         {
             grid.Children.Remove(progressOverlay);
+        }
+    }
+
+    private async Task ShowProgressOnImageEditorPage(ContentPage imageEditorPage)
+    {
+        // Create a progress overlay
+        var progressOverlay = new Grid
+        {
+            BackgroundColor = Color.FromArgb("#80000000"), // Semi-transparent black
+            HorizontalOptions = LayoutOptions.Fill,
+            VerticalOptions = LayoutOptions.Fill,
+            ZIndex = 9999 // Ensure it's on top
+        };
+
+        var progressFrame = new Frame
+        {
+            BackgroundColor = Color.FromArgb("#2D2D2D"),
+            CornerRadius = 12,
+            Padding = new Thickness(30),
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center,
+            HasShadow = true
+        };
+
+        var progressStack = new StackLayout
+        {
+            Spacing = 20,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
+        var activityIndicator = new ActivityIndicator
+        {
+            IsRunning = true,
+            Color = Color.FromArgb("#E50000"),
+            WidthRequest = 40,
+            HeightRequest = 40
+        };
+
+        var progressLabel = new Label
+        {
+            Text = "Saving image...",
+            FontSize = 16,
+            TextColor = Colors.White,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
+        progressStack.Children.Add(activityIndicator);
+        progressStack.Children.Add(progressLabel);
+        progressFrame.Content = progressStack;
+        progressOverlay.Children.Add(progressFrame);
+
+        // Add overlay to the image editor page
+        if (imageEditorPage.Content is Grid mainGrid)
+        {
+            mainGrid.Children.Add(progressOverlay);
+        }
+        else if (imageEditorPage.Content is Microsoft.Maui.Controls.View content)
+        {
+            // If content is not a Grid, wrap it
+            var wrapperGrid = new Grid();
+            wrapperGrid.Children.Add(content);
+            wrapperGrid.Children.Add(progressOverlay);
+            imageEditorPage.Content = wrapperGrid;
         }
     }
 }

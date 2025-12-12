@@ -15,6 +15,7 @@ using Android.Util;
 using Android.Views;
 using AndroidX.AppCompat.App;
 using Android.OS;
+using AndroidX.Core.View;
 #endif
 namespace MauiApp.ImageEditor
 {
@@ -141,9 +142,99 @@ namespace MauiApp.ImageEditor
                 {
                     activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#FF6B5A"));
                 }
+                
+                // Handle safe area insets for bottom navigation bar (fixes Samsung Android 12+ overlap issue)
+                // Add small delay to ensure visual tree is ready
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    await Task.Delay(150);
+                    ApplySafeAreaInsets();
+                });
             }
 #endif
         }
+
+#if ANDROID
+        private void ApplySafeAreaInsets()
+        {
+            try
+            {
+                var activity = Platform.CurrentActivity as AppCompatActivity;
+                if (activity == null) return;
+
+                // Find the bottom toolbar Grid by name
+                var bottomGrid = BottomToolbarGrid;
+                if (bottomGrid == null)
+                {
+                    // Wait a bit for the visual tree to be ready
+                    Device.BeginInvokeOnMainThread(async () =>
+                    {
+                        await Task.Delay(100);
+                        ApplySafeAreaInsets();
+                    });
+                    return;
+                }
+
+                // Use a more reliable method to get window insets
+                int bottomInset = 0;
+
+                // Method 1: Use ViewCompat (most reliable for Android 12+)
+                var rootView = activity.Window?.DecorView?.RootView;
+                if (rootView != null)
+                {
+                    var insets = ViewCompat.GetRootWindowInsets(rootView);
+                    if (insets != null)
+                    {
+                        var navigationBarInsets = insets.GetInsets(WindowInsetsCompat.Type.NavigationBars());
+                        bottomInset = navigationBarInsets.Bottom;
+                    }
+                }
+
+                // Method 2: Fallback - calculate from window insets directly
+                if (bottomInset == 0 && activity.Window != null)
+                {
+                    var decorView = activity.Window.DecorView;
+                    if (decorView != null && Build.VERSION.SdkInt >= BuildVersionCodes.R)
+                    {
+                        var windowInsets = decorView.RootWindowInsets;
+                        if (windowInsets != null)
+                        {
+                            var insets = windowInsets.GetInsets(Android.Views.WindowInsets.Type.NavigationBars());
+                            bottomInset = insets.Bottom;
+                        }
+                    }
+                }
+
+                // Convert pixels to device-independent units
+                var density = activity.Resources?.DisplayMetrics?.Density ?? 1f;
+                var bottomPaddingDp = bottomInset / density;
+
+                // Apply padding to bottom toolbar to prevent overlap
+                // Always apply minimum padding, even if detection fails
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    var currentPadding = bottomGrid.Padding;
+                    var extraSpacing = 25.0;
+                    var minimumPadding = 30.0;
+                    var newBottomPadding = bottomPaddingDp > 0 
+                        ? Math.Max(minimumPadding, bottomPaddingDp + extraSpacing)
+                        : minimumPadding;
+                    
+                    bottomGrid.Padding = new Thickness(
+                        currentPadding.Left,
+                        currentPadding.Top,
+                        currentPadding.Right,
+                        newBottomPadding
+                    );
+                });
+            }
+            catch (Exception ex)
+            {
+                // Silently fail - safe area handling is best effort
+                System.Diagnostics.Debug.WriteLine($"Failed to apply safe area insets: {ex.Message}");
+            }
+        }
+#endif
 
         private async Task OnBackClicked()
         {

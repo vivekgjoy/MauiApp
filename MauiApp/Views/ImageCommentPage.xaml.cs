@@ -1,10 +1,12 @@
 using MauiApp.Core.Interfaces;
 using MauiApp.Core.Models;
 using Microsoft.Maui.Platform;
+using Microsoft.Maui.Controls;
 #if ANDROID
 using AndroidX.AppCompat.App;
 using Android.OS;
 using Android.Graphics;
+using AndroidX.Core.View;
 #endif
 
 namespace MauiApp.Views;
@@ -83,11 +85,96 @@ public partial class ImageCommentPage : ContentPage
             {
                 activity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#ED1C24"));
             }
+            
+            // Handle safe area insets for bottom navigation bar
+            ApplySafeAreaInsets();
         }
 #else
         // No status bar color setting needed for other platforms
 #endif
     }
+
+#if ANDROID
+    private void ApplySafeAreaInsets()
+    {
+        try
+        {
+            var activity = Platform.CurrentActivity as AppCompatActivity;
+            if (activity == null) return;
+
+            // Find the bottom buttons Grid by name
+            var bottomGrid = this.FindByName<Grid>("BottomButtonsGrid");
+            if (bottomGrid == null)
+            {
+                // Fallback: Try to find it by traversing the visual tree
+                // Wait a bit for the visual tree to be ready
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    await Task.Delay(100);
+                    ApplySafeAreaInsets();
+                });
+                return;
+            }
+
+            // Use a more reliable method to get window insets
+            int bottomInset = 0;
+
+            // Method 1: Use ViewCompat (most reliable for Android 12+)
+            var rootView = activity.Window?.DecorView?.RootView;
+            if (rootView != null)
+            {
+                var insets = AndroidX.Core.View.ViewCompat.GetRootWindowInsets(rootView);
+                if (insets != null)
+                {
+                    var navigationBarInsets = insets.GetInsets(AndroidX.Core.View.WindowInsetsCompat.Type.NavigationBars());
+                    bottomInset = navigationBarInsets.Bottom;
+                }
+            }
+
+            // Method 2: Fallback - calculate from window insets directly
+            if (bottomInset == 0 && activity.Window != null)
+            {
+                var decorView = activity.Window.DecorView;
+                if (decorView != null && Build.VERSION.SdkInt >= BuildVersionCodes.R)
+                {
+                    var windowInsets = decorView.RootWindowInsets;
+                    if (windowInsets != null)
+                    {
+                        var insets = windowInsets.GetInsets(Android.Views.WindowInsets.Type.NavigationBars());
+                        bottomInset = insets.Bottom;
+                    }
+                }
+            }
+
+            // Convert pixels to device-independent units
+            var density = activity.Resources?.DisplayMetrics?.Density ?? 1f;
+            var bottomPaddingDp = bottomInset / density;
+
+            // Apply padding to bottom buttons to prevent overlap
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var currentPadding = bottomGrid.Padding;
+                var extraSpacing = 25.0;
+                var minimumPadding = 30.0;
+                var newBottomPadding = bottomPaddingDp > 0 
+                    ? Math.Max(minimumPadding, bottomPaddingDp + extraSpacing)
+                    : minimumPadding;
+                
+                bottomGrid.Padding = new Thickness(
+                    currentPadding.Left,
+                    currentPadding.Top,
+                    currentPadding.Right,
+                    newBottomPadding
+                );
+            });
+        }
+        catch (Exception ex)
+        {
+            // Silently fail - safe area handling is best effort
+            System.Diagnostics.Debug.WriteLine($"Failed to apply safe area insets: {ex.Message}");
+        }
+    }
+#endif
 
     private async Task OnBackClicked()
     {
