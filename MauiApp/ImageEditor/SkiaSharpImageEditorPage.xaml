@@ -50,10 +50,11 @@
                   Padding="20,0"
                   VerticalOptions="Center">
 
-                <!-- LEFT SIDE -->
+                <!-- LEFT SIDE - Hide when in editing mode -->
                 <HorizontalStackLayout HorizontalOptions="Start"
                                        VerticalOptions="Center"
-                                       Spacing="16">
+                                       Spacing="16"
+                                       IsVisible="{Binding IsMainToolbarVisible}">
 
                     <!-- Folder -->
                     <Image Source="ic_open_folder_edit.svg"
@@ -88,10 +89,11 @@
                     </Image>
                 </HorizontalStackLayout>
 
-                <!-- RIGHT SIDE -->
+                <!-- RIGHT SIDE - Hide when in editing mode -->
                 <HorizontalStackLayout HorizontalOptions="End"
                                        VerticalOptions="Center"
-                                       Spacing="16">
+                                       Spacing="16"
+                                       IsVisible="{Binding IsMainToolbarVisible}">
 
                     <!-- Reset -->
                     <Image Source="ic_reset_image_edit.svg"
