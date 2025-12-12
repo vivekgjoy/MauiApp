@@ -479,3 +479,5 @@ public partial class CropToolViewModel : ObservableObject
 }
 
 
+
+

@@ -45,8 +45,8 @@
 
             <!-- Action Toolbar (Undo, Redo, Reset, Save) - Always Visible -->
             <Grid Grid.Row="1"
-                  BackgroundColor="Transparent"
-                  HeightRequest="48"
+                  BackgroundColor="#1E1E1E"
+                  HeightRequest="40"
                   Padding="20,0"
                   VerticalOptions="Center">
 
