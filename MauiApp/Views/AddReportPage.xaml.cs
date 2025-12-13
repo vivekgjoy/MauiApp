@@ -436,7 +436,7 @@ public partial class AddReportPage : ContentPage
             MauiApp.ImageEditor.SkiaSharpImageEditorPage? imageEditorPage = null;
             
             // Create page callback (lightweight operation)
-            Action<string> onImageSaved = async (savedImagePath) =>
+            Func<string, Task> onImageSaved = async (savedImagePath) =>
             {
                 // Get the current navigation and image editor page
                 var navigation = imageEditorPage?.Navigation ?? Navigation;
@@ -470,25 +470,44 @@ public partial class AddReportPage : ContentPage
                         IsEditingExisting = true
                     };
                     
-                    // Navigate directly: Insert comment page before AddReportPage, then pop twice
-                    // This way AddReportPage never appears
-                    if (navigation.NavigationStack.Count >= 2)
+                    // Push comment page FIRST (no animation) - it renders immediately on top
+                    // This covers the editor completely
+                    await navigation.PushAsync(commentPage, false).ConfigureAwait(false);
+                    
+                    // Wait for comment page to fully appear and render
+                    var pageAppeared = new TaskCompletionSource<bool>();
+                    void OnPageAppearing(object? s, EventArgs e)
                     {
-                        // Insert comment page before AddReportPage (which is second to last)
-                        var addReportPageIndex = navigation.NavigationStack.Count - 2;
-                        navigation.InsertPageBefore(commentPage, navigation.NavigationStack[addReportPageIndex]);
-                        
-                        // Pop image editor (no animation)
+                        pageAppeared.TrySetResult(true);
+                        commentPage.Appearing -= OnPageAppearing;
+                    }
+                    commentPage.Appearing += OnPageAppearing;
+                    
+                    // Wait for OnAppearing to fire (page is now fully visible and ready)
+                    // Also wait a bit more to ensure rendering is complete
+                    await Task.WhenAny(
+                        pageAppeared.Task,
+                        Task.Delay(600)
+                    ).ConfigureAwait(false);
+                    
+                    // Additional delay to ensure page is fully rendered and stable
+                    await Task.Delay(300).ConfigureAwait(false);
+                    
+                    // Now pop both pages in quick succession
+                    // Comment page is already fully visible, so it stays visible
+                    var stack = navigation.NavigationStack.ToList();
+                    if (stack.Count > 2)
+                    {
+                        // Pop editor (comment page stays visible on top)
                         await navigation.PopAsync(false).ConfigureAwait(false);
                         
-                        // Pop AddReportPage (no animation) - now comment page is on top
+                        // Immediately pop AddReportPage (no delay to prevent flash)
                         await navigation.PopAsync(false).ConfigureAwait(false);
                     }
-                    else
+                    else if (stack.Count > 1)
                     {
-                        // Fallback: pop and push if navigation stack is unexpected
+                        // Fallback: just pop editor
                         await navigation.PopAsync(false).ConfigureAwait(false);
-                        await navigation.PushAsync(commentPage, false).ConfigureAwait(false);
                     }
                 }
                 finally

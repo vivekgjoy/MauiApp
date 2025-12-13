@@ -114,7 +114,7 @@
                     <Image Source="ic_save_image_edit.svg"
                            WidthRequest="26" HeightRequest="26">
                         <Image.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SaveImageCommand}"/>
+                            <TapGestureRecognizer Tapped="OnSaveButtonTapped"/>
                         </Image.GestureRecognizers>
                     </Image>
                 </HorizontalStackLayout>
@@ -191,6 +191,34 @@
                            HorizontalOptions="Center"
                            Opacity="0.8" />
                 </StackLayout>
+            </Grid>
+
+            <!-- Processing/Saving Overlay -->
+            <Grid x:Name="ProcessingOverlay"
+                  BackgroundColor="#C8000000"
+                  IsVisible="False"
+                  HorizontalOptions="FillAndExpand"
+                  VerticalOptions="FillAndExpand"
+                  ZIndex="1000">
+                <Grid VerticalOptions="Center" HorizontalOptions="Center">
+                    <Frame BackgroundColor="#2D2D2D" 
+                           CornerRadius="16" 
+                           Padding="30" 
+                           HasShadow="True">
+                        <StackLayout Spacing="20">
+                            <ActivityIndicator x:Name="ProcessingIndicator"
+                                             IsRunning="True" 
+                                             Color="#FF6B5A" 
+                                             WidthRequest="50" 
+                                             HeightRequest="50"/>
+                            <Label x:Name="ProcessingLabel"
+                                   Text="Processing image..." 
+                                   TextColor="White" 
+                                   FontSize="16" 
+                                   HorizontalTextAlignment="Center"/>
+                        </StackLayout>
+                    </Frame>
+                </Grid>
             </Grid>
 
             <!-- Transparent overlay to capture touch events (for Draw mode) -->

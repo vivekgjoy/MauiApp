@@ -9,6 +9,7 @@ using Microsoft.Maui.Devices;
 using MauiApp.ImageEditor.ViewModels;
 using MauiApp.ImageEditor.Models;
 using MauiApp.ImageEditor.Views.ToolPanels;
+using MauiApp.Views;
 using System.Windows.Input;
 #if ANDROID
 using Android.Util;
@@ -26,7 +27,7 @@ namespace MauiApp.ImageEditor
         // Drawing state
         private bool isDrawing = false;
         private SKPoint lastPoint;
-        private SKPoint? previousPoint; // Track previous point for smooth cubic curves
+        private SKPoint? previousPoint;
         private SKPath? currentPath;
         // Temporary strokes being drawn (not yet saved to bitmap)
         private List<Stroke> temporaryStrokes = new();
@@ -40,7 +41,6 @@ namespace MauiApp.ImageEditor
         // Legacy support - keep textOverlays for rendering finalized captions
         private List<TextOverlay> textOverlays = new();
         private TextOverlay? selectedTextOverlay = null;
-        // Track which saved caption is being edited (null = new caption)
         private Guid? editingCaptionId = null;
         
         // Flag to track if +Add button should be enabled
@@ -50,12 +50,11 @@ namespace MauiApp.ImageEditor
         private ShapeLayer? currentEditingShape = null;
         // Finalized shapes that have been saved
         private List<ShapeLayer> savedShapes = new();
-        // Track which saved shape is being edited (null = new shape)
         private Guid? editingShapeId = null;
         
         // Shape dragging/resizing state
         private bool isDraggingShape = false;
-        private bool shapeDragStarted = false; // Track if drag has actually started (after movement threshold)
+        private bool shapeDragStarted = false;
         private SKPoint initialShapePosition; // Initial shape position when dragging started
         private SKPoint initialShapeTouch; // Initial touch point when dragging shape started
         private SKRect initialShapeBounds; // Initial shape bounds when resizing started
@@ -86,10 +85,10 @@ namespace MauiApp.ImageEditor
         private int? draggingTextHandle = null; // 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right, 4=move
         private float initialTextSize = 0f; // Initial text size when resize started
         private SKRect initialTextBounds = SKRect.Empty; // Initial text bounds when resize started
-        public Action<string>? OnImageSaved { get; set; }
+        public Func<string, Task>? OnImageSaved { get; set; }
         public event EventHandler? ImageCancelled;
 
-        public SkiaSharpImageEditorPage(Action<string>? onImageSaved = null)
+        public SkiaSharpImageEditorPage(Func<string, Task>? onImageSaved = null)
         {
             InitializeComponent();
             OnImageSaved = onImageSaved;
@@ -388,9 +387,63 @@ namespace MauiApp.ImageEditor
                 BindingContext = viewModel;
 
                 // Subscribe to image saved event
-                viewModel.ImageSaved += (sender, path) =>
+                viewModel.ImageSaved += async (sender, path) =>
                 {
-                    OnImageSaved?.Invoke(path);
+                    // Keep processing overlay visible during navigation
+                    if (ProcessingOverlay != null && ProcessingLabel != null)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            ProcessingLabel.Text = "Navigating...";
+                        });
+                    }
+                    
+                    try
+                    {
+                        // If callback is provided, let it handle navigation (it will push first to keep overlay visible)
+                        // Otherwise, handle navigation ourselves
+                        if (OnImageSaved != null)
+                        {
+                            // Callback will handle navigation - it pushes first to keep overlay visible
+                            await OnImageSaved.Invoke(path);
+                        }
+                        else
+                        {
+                            // No callback - handle navigation ourselves
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                            {
+                                var commentPage = new ImageCommentPage
+                                {
+                                    ImagePath = path
+                                };
+                                
+                                // Push the comment page first - overlay stays visible
+                                await Navigation.PushAsync(commentPage, false);
+                                
+                                // Wait for page to render
+                                await Task.Delay(150);
+                                
+                                // Now pop the editor page
+                                await Navigation.PopAsync(false);
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Hide overlay on error
+                        if (ProcessingOverlay != null)
+                        {
+                            MainThread.BeginInvokeOnMainThread(() =>
+                            {
+                                ProcessingOverlay.IsVisible = false;
+                            });
+                        }
+                        System.Diagnostics.Debug.WriteLine($"Error during navigation: {ex.Message}");
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                        {
+                            await DisplayAlert("Error", $"Failed to navigate: {ex.Message}", "OK");
+                        });
+                    }
                 };
 
                 // Subscribe to image loaded event to hide loading indicator
@@ -1251,6 +1304,42 @@ namespace MauiApp.ImageEditor
                 CanvasView.InvalidateSurface();
             }
         }
+
+        private async void OnSaveButtonTapped(object? sender, EventArgs e)
+        {
+            if (viewModel == null || viewModel.WorkingBitmap == null)
+                return;
+
+            try
+            {
+                // Show processing overlay before starting save
+                if (ProcessingOverlay != null && ProcessingLabel != null)
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        ProcessingOverlay.IsVisible = true;
+                        ProcessingLabel.Text = "Processing image...";
+                    });
+                }
+
+                // Call the view model's SaveImage method
+                // This will trigger the ImageSaved event which handles navigation
+                await viewModel.SaveImageCommand.ExecuteAsync(null);
+            }
+            catch (Exception ex)
+            {
+                // Hide overlay on error
+                if (ProcessingOverlay != null)
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        ProcessingOverlay.IsVisible = false;
+                    });
+                }
+                await DisplayAlert("Error", $"Failed to save image: {ex.Message}", "OK");
+            }
+        }
+
         private bool isDrawStrokeSliderDragging = false;
         private void OnDrawStrokeSliderValueChanged(object? sender, ValueChangedEventArgs e)
         {
@@ -1551,7 +1640,7 @@ namespace MauiApp.ImageEditor
             var textColor = viewModel.TextVM.SelectedTextColor;
             var newTextOverlay = new TextOverlay
             {
-                Text = "Enter Text", // Start with placeholder text
+                Text = "Enter Text",
                 X = bitmap.Width / 2f,
                 Y = bitmap.Height / 2f,
                 Color = ConvertColor(textColor),
@@ -1598,7 +1687,6 @@ namespace MauiApp.ImageEditor
                 });
             }
 
-            // Debug: Verify text overlay was added
 
             // Force canvas redraw
             if (CanvasView != null)
