@@ -5,11 +5,19 @@
              x:Name="NavigationBar">
 
     <!-- Gradient background same as Splash/Login -->
-    <Grid HeightRequest="100"
+    <Grid HeightRequest="80"
           Padding="0"
-          Background="Transparent">
+          Background="Transparent"
+          VerticalOptions="Start"
+          HorizontalOptions="FillAndExpand">
 
-        <BoxView Grid.RowSpan="1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="8"/>
+        </Grid.RowDefinitions>
+
+        <BoxView Grid.RowSpan="3">
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="{StaticResource TopCoral}" Offset="0.0" />
@@ -19,19 +27,23 @@
         </BoxView>
 
         <!-- Navigation Content -->
-        <Grid Padding="15,50,15,15"
-            ColumnDefinitions="Auto,*,Auto"
+        <Grid Grid.Row="1"
+              Padding="10,0,15,0"
+              ColumnDefinitions="Auto,*,Auto"
               VerticalOptions="Center"
               Background="Transparent">
 
             <!-- Back Button -->
-            <ImageButton Grid.Column="0"
-                         Source="ic_arrow_back.svg"
-                         WidthRequest="30"
-                         HeightRequest="30"
-                         BackgroundColor="Transparent"
-                         Clicked="OnBackClicked"
-                         VerticalOptions="Center" />
+            <Image Grid.Column="0"
+                   Source="ic_arrow_back.svg"
+                   WidthRequest="22"
+                   HeightRequest="22"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Start">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackClicked" />
+                </Image.GestureRecognizers>
+            </Image>
 
             <!-- Title -->
             <Label Grid.Column="1"
@@ -39,7 +51,7 @@
                    Text="{Binding Source={x:Reference NavigationBar}, Path=Title}"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
-                   FontSize="22"
+                   FontSize="18"
                    FontAttributes="Bold"
                    TextColor="White" />
 

@@ -107,13 +107,10 @@
                 </StackLayout>
             </ScrollView>
 
-            <!-- Bottom Buttons -->
-            <Frame Grid.Row="2"
-                   BackgroundColor="Transparent"
-                   CornerRadius="0"
-                   Padding="20"
-                   HasShadow="False"
-                   Margin="0">
+            <!-- Bottom Buttons - Safe from gesture bar -->
+            <Grid x:Name="BottomButtonsGrid" Grid.Row="2"
+                  BackgroundColor="Transparent"
+                  Padding="20,10,20,30">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
                     <Button Grid.Column="0"
                             Text="Skip"
@@ -121,19 +118,21 @@
                             TextColor="White"
                             BorderColor="White"
                             BorderWidth="1.5"
-                            CornerRadius="8"
+                            CornerRadius="12"
+                            HeightRequest="56"
+                            FontSize="16"
                             Clicked="OnSkipClicked" />
 
                     <Button Grid.Column="1"
                             Text="Save &amp; Continue"
                             BackgroundColor="#FF6B5A"
                             TextColor="White"
-                            BorderColor="#FF826C"
-                            BorderWidth="1.5"
-                            CornerRadius="8"
+                            CornerRadius="12"
+                            HeightRequest="56"
+                            FontSize="16"
                             Clicked="OnSaveAndContinueClicked" />
                 </Grid>
-            </Frame>
+            </Grid>
 
         </Grid>
     </Grid>

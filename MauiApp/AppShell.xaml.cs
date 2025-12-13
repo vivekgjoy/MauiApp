@@ -13,7 +13,7 @@ namespace MauiApp
             Routing.RegisterRoute(nameof(ReportsHistoryPage), typeof(ReportsHistoryPage));
             Routing.RegisterRoute(nameof(PDFPreviewPage), typeof(PDFPreviewPage));
             Routing.RegisterRoute(nameof(ImageCommentPage), typeof(ImageCommentPage));
-            Routing.RegisterRoute(nameof(ImageEditPage), typeof(ImageEditPage));
+            // OLD: Routing.RegisterRoute(nameof(ImageEditPage), typeof(ImageEditPage)); // Replaced by SkiaSharpImageEditorPage
             Routing.RegisterRoute(nameof(ImageCropPage), typeof(ImageCropPage));
             Routing.RegisterRoute(nameof(ImageSourceSelectionPage), typeof(ImageSourceSelectionPage));
         }

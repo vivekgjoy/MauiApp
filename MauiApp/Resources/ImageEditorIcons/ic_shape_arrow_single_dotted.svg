@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+  <!-- Dotted line from start to near arrowhead -->
+  <path d="M360-600 L680-280" stroke="#e3e3e3" stroke-width="50" stroke-linecap="round" stroke-dasharray="70 50" fill="none"/>
+  <!-- Arrowhead -->
+  <path d="m680-280-56-56 80-80v80h-24Z"/>
+</svg>

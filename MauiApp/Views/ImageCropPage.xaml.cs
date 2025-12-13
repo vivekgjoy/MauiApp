@@ -1,6 +1,7 @@
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Storage;
 using SkiaSharp;
+using MauiApp.ImageEditor;
 
 namespace MauiApp.Views;
 
@@ -261,9 +262,29 @@ public partial class ImageCropPage : ContentPage
 
             CroppedImagePath = croppedImagePath;
 
+            // NEW: Navigate to SkiaSharp Image Editor with the cropped image
+            var imageEditorPage = new MauiApp.ImageEditor.SkiaSharpImageEditorPage(async (savedImagePath) =>
+            {
+                // When image is saved, navigate to comment page
+                await Navigation.PopAsync(); // Close image editor
+                
+                var commentPage = new ImageCommentPage
+                {
+                    ImagePath = savedImagePath
+                };
+                
+                await Navigation.PushAsync(commentPage);
+            });
+            
+            imageEditorPage.SetImageSource(croppedImagePath);
+            await Navigation.PushAsync(imageEditorPage);
+            
+            // OLD CODE - COMMENTED OUT
+            /*
             // Navigate to ImageEditPage with the cropped image
             var imageEditPage = new ImageEditPage { ImagePath = croppedImagePath };
             await Navigation.PushAsync(imageEditPage);
+            */
         }
         catch (Exception ex)
         {
