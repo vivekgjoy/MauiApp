@@ -734,6 +734,19 @@ public partial class ImageEditorViewModel : ObservableObject
             return;
         }
         
+        // Draw tool doesn't use sliding panel - it replaces bottom toolbar
+        if (tool.Type == ToolType.Draw)
+        {
+            IsToolPanelVisible = false;
+            PanelTranslationY = 420;
+            SelectedSubToolType = SubToolType.None;
+            if (DrawVM != null)
+            {
+                DrawVM.StartDrawMode();
+            }
+            return;
+        }
+        
         // Other tools use sliding panel
         IsToolPanelVisible = true;
         PanelTranslationY = 0; // Slide panel up
@@ -789,6 +802,20 @@ public partial class ImageEditorViewModel : ObservableObject
             if (TextVM != null)
             {
                 TextVM.StartTextMode();
+            }
+            return;
+        }
+        
+        // Handle Draw tool specially - it replaces bottom toolbar
+        if (toolName == "Draw")
+        {
+            SelectedToolType = ToolType.Draw;
+            IsToolPanelVisible = false;
+            PanelTranslationY = 420;
+            SelectedSubToolType = SubToolType.None;
+            if (DrawVM != null)
+            {
+                DrawVM.StartDrawMode();
             }
             return;
         }

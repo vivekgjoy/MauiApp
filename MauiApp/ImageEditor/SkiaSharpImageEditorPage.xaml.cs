@@ -1,4 +1,4 @@
-﻿using SkiaSharp;
+using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
 using Microsoft.Maui.Storage;
@@ -1245,6 +1245,9 @@ namespace MauiApp.ImageEditor
                 viewModel.DrawVM.ShowStrokePanel = false;
                 viewModel.DrawVM.IsDrawMode = false;
                 viewModel.SelectedToolType = ToolType.None;
+                // Hide the sliding panel to prevent it from reappearing
+                viewModel.IsToolPanelVisible = false;
+                viewModel.PanelTranslationY = 420;
                 CanvasView.InvalidateSurface();
             }
         }
